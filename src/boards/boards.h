@@ -1,0 +1,39 @@
+ /******************************************************************************
+ * @file    noards.h
+ * @author  Insight SiP
+ * @version V0.2.0
+ * @date    13-03-2020
+ * @brief   Board management file.
+ *
+ * @attention
+ *  THIS SOFTWARE IS PROVIDED BY INSIGHT SIP "AS IS" AND ANY EXPRESS
+ *  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ *  OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL INSIGHT SIP OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ *  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ *  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ *  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *****************************************************************************/
+ 
+ 
+#ifndef BOARDS_H
+#define BOARDS_H
+
+
+#if defined(BOARD_ISP1507_AX)
+    #include "ISP1507_AX.h"
+#elif defined(BOARD_ISP1507_AL)
+    #include "ISP1507_AL.h"
+#elif defined(BOARD_ISP1807_LR)
+    #include "ISP1807_LR.h"
+#elif defined(BOARD_ISP1907_LL)
+    #include "ISP1907_LL.h"
+#else
+    #error "Board is not defined"
+#endif
+
+#endif
