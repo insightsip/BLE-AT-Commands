@@ -1,8 +1,6 @@
  /******************************************************************************
  * @file    ISP1507_AX.h
  * @author  Insight SiP
- * @version V0.2.0
- * @date    13-03-2020
  * @brief   ISP1507_AX board specific file.
  *
  * @attention

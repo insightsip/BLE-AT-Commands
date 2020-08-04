@@ -1,8 +1,6 @@
  /******************************************************************************
  * @file    ser_pkt_fw.h
  * @author  Insight SiP
- * @version V0.2.0
- * @date    13-03-2020
  * @brief  serial packet forwader
  *
  *

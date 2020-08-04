@@ -1,8 +1,6 @@
  /******************************************************************************
  * @file    at_manager.h
  * @author  Insight SiP
- * @version V0.2.0
- * @date    13-03-2020
  * @brief  at commands for BLE
  *
  *
@@ -25,7 +23,7 @@
 
 #include <stdint.h>
 
-#define FW_REVISION         "1.0.0"
+#define FW_REVISION         "1.1.0"
 #define SER_PKT_FW_PORT_AT  0
 
 typedef enum 

@@ -1,8 +1,6 @@
  /******************************************************************************
  * @file    flash_manager.c
  * @author  Insight SiP
- * @version V0.2.0
- * @date    13-03-2020
  * @brief   Flash manager
  *
  *
