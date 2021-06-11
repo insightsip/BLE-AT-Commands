@@ -639,6 +639,7 @@ at_error_code_t at_name_set(const uint8_t *param)
     uint32_t err_code;
     at_error_code_t at_err_code;
     uint8_t name[31];
+    memset(name, 0, sizeof(name));
 
      // Check parameters
     if (sscanf(param, "%[^\n]", &name) != 1)
