@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 
-#define FW_REVISION         "1.1.1"
+#define FW_REVISION         "1.1.2"
 #define SER_PKT_FW_PORT_AT  0
 
 typedef enum 
