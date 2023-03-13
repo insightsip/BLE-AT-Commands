@@ -21,6 +21,8 @@
 #ifndef BLE_MANAGER_H__
 #define BLE_MANAGER_H__
 
+#include <stdint.h>
+
 #define SER_PKT_FW_PORT_BLE 1
 
 /**@brief BLE manager states.
