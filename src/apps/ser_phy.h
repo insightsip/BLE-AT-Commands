@@ -127,4 +127,13 @@ void ser_phy_close(void);
  */
 uint32_t ser_phy_tx_pkt_send(uint8_t *p_buffer, uint8_t num_of_bytes);
 
+/**@brief Function for setting the buffer length.
+ *
+ * @param[in] length buffer length
+ *
+ * @retval NRF_SUCCESS                Operation success.
+ * @retval NRF_ERROR_INVALID_PARAM    Invalid length 
+ */
+uint32_t ser_phy_buffer_length_set(uint8_t length);
+
 #endif

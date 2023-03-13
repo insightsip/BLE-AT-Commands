@@ -37,6 +37,7 @@
 
 #include "flash_manager.h"
 #include "ser_pkt_fw.h"
+#include "ser_phy.h" // Only for ser_phy_buffer_length_set(...)
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -307,9 +308,12 @@ static uint32_t ble_stack_init(void) {
 }
 
 /**@brief Function for handling events from the GATT library. */
-void gatt_evt_handler(nrf_ble_gatt_t *p_gatt, nrf_ble_gatt_evt_t const *p_evt) {
-    if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED)) {
+void gatt_evt_handler(nrf_ble_gatt_t *p_gatt, nrf_ble_gatt_evt_t const *p_evt) 
+{
+    if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED)) 
+    {
         m_ble_nus_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+        ser_phy_buffer_length_set(m_ble_nus_max_data_len);
         NRF_LOG_INFO("Data len is set to 0x%X(%d)", m_ble_nus_max_data_len, m_ble_nus_max_data_len);
     }
     NRF_LOG_DEBUG("ATT MTU exchange completed. central 0x%x peripheral 0x%x", p_gatt->att_mtu_desired_central, p_gatt->att_mtu_desired_periph);
@@ -507,8 +511,7 @@ static void nus_data_handler(ble_nus_evt_t *p_evt) {
         err_code = ser_pkt_fw_tx_send(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length, SER_PKT_FW_PORT_BLE);
 
         if (p_evt->params.rx_data.p_data[p_evt->params.rx_data.length - 1] == '\r') {
-            while (ser_pkt_fw_tx_send("\n", 1, SER_PKT_FW_PORT_BLE) == NRF_ERROR_BUSY)
-                ;
+            while (ser_pkt_fw_tx_send("\n", 1, SER_PKT_FW_PORT_BLE) == NRF_ERROR_BUSY);
         }
     }
 }

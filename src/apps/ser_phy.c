@@ -21,23 +21,23 @@
 #include <stdbool.h>
 #include <string.h>
 #include "app_error.h"
-#include "ser_phy.h"
 #include "app_uart.h"
+#include "ble_gatt.h"
 #include "nrf_delay.h"
+
+#include "ser_phy.h"
 #include "boards.h"
 
-#if defined (UART_PRESENT)
-#include "nrf_uart.h"
-#endif
-#if defined (UARTE_PRESENT)
-#include "nrf_uarte.h"
-#endif
 
 #define UART_TX_BUF_SIZE 256                                        /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE 256                                        /**< UART RX buffer size. */
+#define OPCODE_LENGTH 1
+#define HANDLE_LENGTH 2
 
 static uint8_t m_rx_buffer[UART_RX_BUF_SIZE];
 static ser_phy_events_handler_t m_ser_phy_event_handler;
+static uint16_t m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - OPCODE_LENGTH - HANDLE_LENGTH; /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
+
 
 /**@brief   Function for handling app_uart events.
  *
@@ -58,7 +58,7 @@ void uart_event_handler (app_uart_evt_t * p_event)
             UNUSED_VARIABLE(app_uart_get(&m_rx_buffer[index]));
             index++;
 
-            if ((m_rx_buffer[index - 1] == '\r') || (m_rx_buffer[index - 1] == '\n') || (index >= (UART_RX_BUF_SIZE)))
+            if ((m_rx_buffer[index - 1] == '\r') || (m_rx_buffer[index - 1] == '\n') || (index >= (m_ble_nus_max_data_len)))
             {
                 if (index > 1)
                 {
@@ -120,52 +120,52 @@ uint32_t ser_phy_open(uint8_t flow_control, uint32_t baudrate, ser_phy_events_ha
     switch (baudrate)
     {
         case 1200:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_1200;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud1200;
             break;
         case 2400:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_2400;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud2400;
             break;
         case 4800:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_4800;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud4800;
             break;
         case 9600:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_9600;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud9600;
             break;
         case 14400:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_14400;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud14400;
             break;
         case 19200:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_19200;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud19200;
             break;
         case 28800:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_28800;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud28800;
             break;
         case 38400:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_38400;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud38400;
             break;
         case 57600:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_57600;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud57600;
             break;
         case 76800:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_76800;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud76800;
             break;
         case 115200:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_115200;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud115200;
             break;
         case 230400:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_230400;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud230400;
             break;
         case 250000:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_250000;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud250000;
             break;
         case 460800:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_460800;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud460800;
             break;
         case 921600:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_921600;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud921600;
             break;
         case 1000000:
-            comm_params.baud_rate = NRF_UART_BAUDRATE_1000000;
+            comm_params.baud_rate = UART_BAUDRATE_BAUDRATE_Baud1M;
             break;
     }
 
@@ -199,4 +199,11 @@ uint32_t ser_phy_tx_pkt_send (uint8_t *p_buffer, uint8_t num_of_bytes)
         while(app_uart_put(p_buffer[i]) != NRF_SUCCESS);
        // nrf_delay_us(500);
     }
+}
+
+uint32_t ser_phy_buffer_length_set(uint8_t length)
+{
+    m_ble_nus_max_data_len = length;
+
+    return NRF_SUCCESS;
 }
