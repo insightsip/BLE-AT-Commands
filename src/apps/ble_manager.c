@@ -36,8 +36,8 @@
 #include "nrf_sdh_soc.h"
 
 #include "flash_manager.h"
-#include "ser_pkt_fw.h"
 #include "ser_phy.h" // Only for ser_phy_buffer_length_set(...)
+#include "ser_pkt_fw.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -206,12 +206,12 @@ static uint32_t conn_params_init(void) {
     return NRF_SUCCESS;
 }
 
-/**@brief Function for handling BLE events.
+/**@brief   Function for handling BLE events from peripheral applications.
+ * @details Updates the status LEDs used to report the activity of the peripheral applications.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
- * @param[in]   p_context   Unused.
  */
-static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
+static void on_ble_peripheral_evt(ble_evt_t const *p_ble_evt) {
     uint32_t err_code;
 
     switch (p_ble_evt->header.evt_id) {
@@ -225,7 +225,6 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
 
     case BLE_GAP_EVT_DISCONNECTED:
         NRF_LOG_INFO("Disconnected");
-        // LED indication will be changed when advertising starts.
         m_conn_handle = BLE_CONN_HANDLE_INVALID;
         break;
 
@@ -281,6 +280,139 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
     }
 }
 
+/**@brief Function for handling BLE Stack events that are related to central application.
+ *
+ * @details This function keeps the connection handles of central application up-to-date. It
+ * parses scanning reports, initiates a connection attempt to peripherals when a target UUID
+ * is found, and manages connection parameter update requests.
+ *
+ * @note        Since this function updates connection handles, @ref BLE_GAP_EVT_DISCONNECTED events
+ *              must be dispatched to the target application before invoking this function.
+ *
+ * @param[in]   p_ble_evt   Bluetooth stack event.
+ */
+static void on_ble_central_evt(ble_evt_t const *p_ble_evt) {
+    ble_gap_evt_t const *p_gap_evt = &p_ble_evt->evt.gap_evt;
+    ret_code_t err_code;
+
+    switch (p_ble_evt->header.evt_id) {
+    case BLE_GAP_EVT_CONNECTED: {
+        NRF_LOG_INFO("CENTRAL: Connected, handle: %d.", p_gap_evt->conn_handle);
+        m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+        sd_ble_gap_rssi_start(m_conn_handle, 1, 5);
+
+        // start discovery of services. The NUS Client waits for a discovery result
+        err_code = ble_db_discovery_start(&m_db_disc, p_gap_evt->conn_handle);
+        APP_ERROR_CHECK(err_code);
+    } break; // BLE_GAP_EVT_CONNECTED
+
+    case BLE_GAP_EVT_DISCONNECTED: {
+        NRF_LOG_INFO("CENTRAL: Disconnected, reason: 0x%x", p_gap_evt->params.disconnected.reason);
+        m_conn_handle = BLE_CONN_HANDLE_INVALID;
+    } break; // BLE_GAP_EVT_DISCONNECTED
+
+    case BLE_GAP_EVT_TIMEOUT: {
+        // Timeout for scanning is not specified, so only connection attemps can time out.
+        if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN) {
+            NRF_LOG_DEBUG("CENTRAL: Connection Request timed out.");
+        }
+    } break;
+
+    case BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST: {
+        NRF_LOG_DEBUG("Connection parameters update request.");
+        err_code = sd_ble_gap_conn_param_update(p_gap_evt->conn_handle, &p_gap_evt->params.conn_param_update_request.conn_params);
+        APP_ERROR_CHECK(err_code);
+
+        m_gap_conn_params = p_gap_evt->params.conn_param_update_request.conn_params;
+    } break;
+
+    case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
+        NRF_LOG_DEBUG("PHY update request.");
+        ble_gap_phys_t const phys =
+            {
+                .rx_phys = BLE_GAP_PHY_AUTO,
+                .tx_phys = BLE_GAP_PHY_AUTO,
+            };
+        err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
+        APP_ERROR_CHECK(err_code);
+
+        m_phys.rx_phys = p_gap_evt->params.phy_update_request.peer_preferred_phys.rx_phys;
+        m_phys.tx_phys = p_gap_evt->params.phy_update_request.peer_preferred_phys.tx_phys;
+    } break;
+
+    default:
+        // No implementation needed.
+        break;
+    }
+}
+
+/**@brief Function for handling BLE Stack events that are common to both the central and peripheral roles.
+ * @param[in] conn_handle Connection Handle.
+ * @param[in] p_ble_evt  Bluetooth stack event.
+ */
+static void on_ble_evt(uint16_t conn_handle, ble_evt_t const *p_ble_evt) {
+    ret_code_t err_code;
+
+    switch (p_ble_evt->header.evt_id) {
+
+    case BLE_GAP_EVT_PHY_UPDATE: {
+        NRF_LOG_DEBUG("PHY update.");
+        m_phys.rx_phys = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;
+        m_phys.tx_phys = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
+    } break;
+
+    case BLE_GAP_EVT_CONN_PARAM_UPDATE: {
+        NRF_LOG_DEBUG("CONN PARAM update.");
+        m_gap_conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params;
+    } break;
+
+    case BLE_GATTC_EVT_TIMEOUT:
+        // Disconnect on GATT Client timeout event.
+        NRF_LOG_DEBUG("CENTRAL: GATT Client Timeout.");
+        err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+        APP_ERROR_CHECK(err_code);
+        break;
+
+    case BLE_GATTS_EVT_TIMEOUT:
+        // Disconnect on GATT Server timeout event.
+        NRF_LOG_DEBUG("CENTRAL: GATT Server Timeout.");
+        err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gatts_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+        APP_ERROR_CHECK(err_code);
+        break;
+
+    default:
+        // No implementation needed.
+        break;
+    }
+}
+
+/**@brief Function for checking whether a bluetooth stack event is an advertising timeout.
+ *
+ * @param[in] p_ble_evt Bluetooth stack event.
+ */
+static bool ble_evt_is_advertising_timeout(ble_evt_t const *p_ble_evt) {
+    return (p_ble_evt->header.evt_id == BLE_GAP_EVT_ADV_SET_TERMINATED);
+}
+
+/**@brief Function for handling BLE events.
+ *
+ * @param[in]   p_ble_evt   Bluetooth stack event.
+ * @param[in]   p_context   Unused.
+ */
+static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
+    uint16_t conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+    uint16_t role = ble_conn_state_role(conn_handle);
+
+    on_ble_evt(conn_handle, p_ble_evt);
+
+    // Based on the role this device plays in the connection, dispatch to the right handler.
+    if (role == BLE_GAP_ROLE_PERIPH || ble_evt_is_advertising_timeout(p_ble_evt)) {
+        on_ble_peripheral_evt(p_ble_evt);
+    } else if ((role == BLE_GAP_ROLE_CENTRAL) || (p_ble_evt->header.evt_id == BLE_GAP_EVT_ADV_REPORT)) {
+        on_ble_central_evt(p_ble_evt);
+    }
+}
+
 /**@brief Function for the SoftDevice initialization.
  *
  * @details This function initializes the SoftDevice and the BLE event interrupt.
@@ -308,10 +440,8 @@ static uint32_t ble_stack_init(void) {
 }
 
 /**@brief Function for handling events from the GATT library. */
-void gatt_evt_handler(nrf_ble_gatt_t *p_gatt, nrf_ble_gatt_evt_t const *p_evt) 
-{
-    if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED)) 
-    {
+void gatt_evt_handler(nrf_ble_gatt_t *p_gatt, nrf_ble_gatt_evt_t const *p_evt) {
+    if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED)) {
         m_ble_nus_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
         ser_phy_buffer_length_set(m_ble_nus_max_data_len);
         NRF_LOG_INFO("Data len is set to 0x%X(%d)", m_ble_nus_max_data_len, m_ble_nus_max_data_len);
@@ -511,7 +641,8 @@ static void nus_data_handler(ble_nus_evt_t *p_evt) {
         err_code = ser_pkt_fw_tx_send(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length, SER_PKT_FW_PORT_BLE);
 
         if (p_evt->params.rx_data.p_data[p_evt->params.rx_data.length - 1] == '\r') {
-            while (ser_pkt_fw_tx_send("\n", 1, SER_PKT_FW_PORT_BLE) == NRF_ERROR_BUSY);
+            while (ser_pkt_fw_tx_send("\n", 1, SER_PKT_FW_PORT_BLE) == NRF_ERROR_BUSY)
+                ;
         }
     }
 }
@@ -520,8 +651,7 @@ static void nus_data_handler(ble_nus_evt_t *p_evt) {
  *
  * @param[in]   nrf_error   Error code containing information about what went wrong.
  */
-static void nus_error_handler(uint32_t nrf_error)
-{
+static void nus_error_handler(uint32_t nrf_error) {
     APP_ERROR_HANDLER(nrf_error);
 }
 
@@ -533,31 +663,29 @@ static void nus_error_handler(uint32_t nrf_error)
  * @param[in]   p_ble_nus_evt Pointer to the NUS client event.
  */
 
-static void ble_nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const * p_ble_nus_evt)
-{
+static void ble_nus_c_evt_handler(ble_nus_c_t *p_ble_nus_c, ble_nus_c_evt_t const *p_ble_nus_evt) {
     ret_code_t err_code;
 
-    switch (p_ble_nus_evt->evt_type)
-    {
-        case BLE_NUS_C_EVT_DISCOVERY_COMPLETE:
-            NRF_LOG_INFO("Discovery complete.");
-            err_code = ble_nus_c_handles_assign(p_ble_nus_c, p_ble_nus_evt->conn_handle, &p_ble_nus_evt->handles);
-            APP_ERROR_CHECK(err_code);
+    switch (p_ble_nus_evt->evt_type) {
+    case BLE_NUS_C_EVT_DISCOVERY_COMPLETE:
+        NRF_LOG_INFO("Discovery complete.");
+        err_code = ble_nus_c_handles_assign(p_ble_nus_c, p_ble_nus_evt->conn_handle, &p_ble_nus_evt->handles);
+        APP_ERROR_CHECK(err_code);
 
-            err_code = ble_nus_c_tx_notif_enable(p_ble_nus_c);
-            APP_ERROR_CHECK(err_code);
-            NRF_LOG_INFO("Connected to device with Nordic UART Service.");
-            break;
+        err_code = ble_nus_c_tx_notif_enable(p_ble_nus_c);
+        APP_ERROR_CHECK(err_code);
+        NRF_LOG_INFO("Connected to device with Nordic UART Service.");
+        break;
 
-        case BLE_NUS_C_EVT_NUS_TX_EVT:
-        //TODO implement
-           // ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
-            break;
+    case BLE_NUS_C_EVT_NUS_TX_EVT:
+        // TODO implement
+        //  ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
+        break;
 
-        case BLE_NUS_C_EVT_DISCONNECTED:
-            NRF_LOG_INFO("Disconnected.");
-            scan_start();
-            break;
+    case BLE_NUS_C_EVT_DISCONNECTED:
+        NRF_LOG_INFO("Disconnected.");
+        scan_start();
+        break;
     }
 }
 
@@ -583,9 +711,9 @@ static uint32_t services_init(void) {
     VERIFY_SUCCESS(err_code);
 
     // Initialize NUS client.
-    nus_c_init.evt_handler   = ble_nus_c_evt_handler;
+    nus_c_init.evt_handler = ble_nus_c_evt_handler;
     nus_c_init.error_handler = nus_error_handler;
-    nus_c_init.p_gatt_queue  = &m_ble_gatt_queue;
+    nus_c_init.p_gatt_queue = &m_ble_gatt_queue;
 
     err_code = ble_nus_c_init(&m_ble_nus_c, &nus_c_init);
     VERIFY_SUCCESS(err_code);
