@@ -38,6 +38,7 @@
 #include "flash_manager.h"
 #include "ser_phy.h" // Only for ser_phy_buffer_length_set(...)
 #include "ser_pkt_fw.h"
+#include "boards.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -518,11 +519,8 @@ static uint32_t advertising_start(void) {
     return NRF_SUCCESS;
 }
 
+#if defined(BLE_CAP_CENTRAL)
 /**@brief Function for handling database discovery events.
- *
- * @details This function is a callback function to handle events from the database discovery module.
- *          Depending on the UUIDs that are discovered, this function forwards the events
- *          to their respective services.
  *
  * @param[in] p_event  Pointer to the database discovery event.
  */
@@ -612,6 +610,7 @@ static uint32_t scan_init(void) {
 
     return NRF_SUCCESS;
 }
+#endif // defined(BLE_CAP_CENTRAL)
 
 /**@brief Function for handling Queued Write Module errors.
  *
@@ -663,6 +662,7 @@ static void nus_error_handler(uint32_t nrf_error) {
  * @param[in]   p_ble_nus_evt Pointer to the NUS client event.
  */
 
+#if defined(BLE_CAP_CENTRAL)
 static void ble_nus_c_evt_handler(ble_nus_c_t *p_ble_nus_c, ble_nus_c_evt_t const *p_ble_nus_evt) {
     ret_code_t err_code;
 
@@ -688,13 +688,13 @@ static void ble_nus_c_evt_handler(ble_nus_c_t *p_ble_nus_c, ble_nus_c_evt_t cons
         break;
     }
 }
+#endif // defined(BLE_CAP_CENTRAL)
 
 /**@brief Function for initializing services that will be used by the application.
  */
 static uint32_t services_init(void) {
     uint32_t err_code;
     ble_nus_init_t nus_init;
-    ble_nus_c_init_t nus_c_init;
     nrf_ble_qwr_init_t qwr_init = {0};
 
     // Initialize Queued Write Module.
@@ -710,13 +710,16 @@ static uint32_t services_init(void) {
     err_code = ble_nus_init(&m_nus, &nus_init);
     VERIFY_SUCCESS(err_code);
 
+#if defined(BLE_CAP_CENTRAL)
     // Initialize NUS client.
+    ble_nus_c_init_t nus_c_init;
     nus_c_init.evt_handler = ble_nus_c_evt_handler;
     nus_c_init.error_handler = nus_error_handler;
     nus_c_init.p_gatt_queue = &m_ble_gatt_queue;
 
     err_code = ble_nus_c_init(&m_ble_nus_c, &nus_c_init);
     VERIFY_SUCCESS(err_code);
+#endif // defined(BLE_CAP_CENTRAL)
 
     return NRF_SUCCESS;
 }
@@ -750,16 +753,18 @@ uint32_t ble_manager_init() {
     err_code = conn_params_init();
     VERIFY_SUCCESS(err_code);
 
+#if defined(BLE_CAP_CENTRAL)
     err_code = db_discovery_init();
     VERIFY_SUCCESS(err_code);
+
+    err_code = scan_init();
+    VERIFY_SUCCESS(err_code);
+#endif // defined(BLE_CAP_CENTRAL)
 
     err_code = services_init();
     VERIFY_SUCCESS(err_code);
 
     err_code = advertising_init();
-    VERIFY_SUCCESS(err_code);
-
-    err_code = scan_init();
     VERIFY_SUCCESS(err_code);
 
     // Register to serial packet forwarder

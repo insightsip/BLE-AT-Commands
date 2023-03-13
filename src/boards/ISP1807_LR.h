@@ -31,6 +31,7 @@
 // Capabilities & specificities
 #define BLE_MAX_TXP_8DBM        1
 #define BLE_CAP_PHY_CODED       1
+#define BLE_CAP_CENTRAL
 
 // Others
 #define MODULE_NAME             "ISP1807-LR"
