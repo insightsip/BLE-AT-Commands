@@ -783,7 +783,7 @@ uint32_t ble_manager_connstate_read(uint8_t *state) {
     if (m_conn_handle == BLE_CONN_HANDLE_INVALID) {
         *state = 0;
     } else {
-        *state = 1;
+        *state =  ble_conn_state_role(m_conn_handle);
     }
 
     return NRF_SUCCESS;
@@ -1035,7 +1035,7 @@ uint32_t ble_manager_advertise(uint8_t start) {
         return NRF_ERROR_INVALID_STATE;
     }
 
-    if (start) {
+    if (start = BLE_ADV_START) {
         err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
         VERIFY_SUCCESS(err_code);
     } else {

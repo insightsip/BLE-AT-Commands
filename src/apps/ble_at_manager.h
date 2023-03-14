@@ -47,6 +47,7 @@ typedef enum
 } at_error_code_t;
 
 /* AT Command list */
+/* Common */
 #define AT_RESET            "Z"
 #define AT_ECHO             "E"
 #define AT_INFO             "I"
@@ -58,13 +59,22 @@ typedef enum
 #define AT_BLE_CONNSTATE    "+BLECONNSTATE"
 #define AT_BLE_TXP          "+BLETXP"
 #define AT_BLE_PHY          "+BLEPHY"
-#define AT_BLE_ADVPARAM     "+BLEADVPARAM"
-#define AT_BLE_CONNPARAM    "+BLECONNPARAM"
-#define AT_BLE_ADDR         "+BLEADDR"
-#define AT_BLE_NAME         "+BLENAME"
-#define AT_BLE_ADVERTISE    "+BLEADVERTISE"
 #define AT_BLE_DISCONNECT   "+BLEDISCONNECT"
 #define AT_BLE_RSSI         "+BLERSSI"
+#define AT_BLE_CONNPARAM    "+BLECONNPARAM"
+#define AT_BLE_ADDR         "+BLEADDR"
+#define AT_BLE_ROLE         "+BLEROLE"
+/* Peripheral */
+#define AT_BLE_ADVPARAM     "+BLEADVPARAM"
+#define AT_BLE_NAME         "+BLENAME"
+#define AT_BLE_ADVERTISE    "+BLEADVERTISE"
+/* Central */
+#define AT_SCAN             "+SCAN"
+#define AT_FOUND            "+FOUND"
+#define AT_CONNECT          "+CONNECT"
+
+#define BLE_PERIPHERAL      0
+#define BLE_CENTRAL         1
 
 at_error_code_t ble_at_manager_init();
 at_error_code_t ble_at_manager_execute();

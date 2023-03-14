@@ -36,6 +36,11 @@ typedef enum
     BLE_MANAGER_STATE_MAX
 } ble_manager_state_t;
 
+#define BLE_ADV_START   1
+#define BLE_ADV_STOP    0
+#define BLE_SCAN_START   1
+#define BLE_SCAN_STOP    0
+
 
 /**@brief Function for opening and initializing the BLE manager.
  */
