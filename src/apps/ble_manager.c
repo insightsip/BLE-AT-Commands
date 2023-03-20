@@ -869,7 +869,7 @@ uint32_t ble_manager_init() {
     return err_code;
 }
 
-uint32_t ble_manager_connstate_read(uint8_t *state) {
+uint32_t ble_connection_state_get(uint8_t *state) {
     if (m_conn_handle == BLE_CONN_HANDLE_INVALID) {
         *state = 0;
     } else {
@@ -879,7 +879,7 @@ uint32_t ble_manager_connstate_read(uint8_t *state) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_dcdc_set(uint8_t dcdc_mode) {
+uint32_t ble_dcdc_set(uint8_t dcdc_mode) {
     uint32_t err_code;
 
     // Enable DCDC
@@ -895,13 +895,13 @@ uint32_t ble_manager_dcdc_set(uint8_t dcdc_mode) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_dcdc_read(uint8_t *mode) {
+uint32_t ble_dcdc_get(uint8_t *mode) {
     *mode = m_dcdc_mode;
 
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_txp_set(int8_t txp) {
+uint32_t ble_txp_set(int8_t txp) {
     uint32_t err_code;
 
     // Change TXP
@@ -920,13 +920,13 @@ uint32_t ble_manager_txp_set(int8_t txp) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_txp_read(int8_t *txp) {
+uint32_t ble_txp_get(int8_t *txp) {
     *txp = m_txp;
 
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_phy_set(uint8_t phy_tx, uint8_t phy_rx) {
+uint32_t ble_phy_set(uint8_t phy_tx, uint8_t phy_rx) {
     uint32_t err_code;
     ble_gap_phys_t temp_phys;
 
@@ -953,14 +953,14 @@ uint32_t ble_manager_phy_set(uint8_t phy_tx, uint8_t phy_rx) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_phy_read(uint8_t *phy_tx, uint8_t *phy_rx) {
+uint32_t ble_phy_get(uint8_t *phy_tx, uint8_t *phy_rx) {
     *phy_tx = m_phys.tx_phys;
     *phy_rx = m_phys.rx_phys;
 
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_advparam_set(uint16_t interval) {
+uint32_t ble_advparam_set(uint16_t interval) {
     uint32_t err_code;
     ble_advertising_init_t init;
     ble_adv_mode_t current_mode = m_advertising.adv_mode_current;
@@ -1003,13 +1003,13 @@ uint32_t ble_manager_advparam_set(uint16_t interval) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_advparam_read(uint16_t *interval) {
+uint32_t ble_advparam_get(uint16_t *interval) {
     *interval = m_adv_interval;
 
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_connparam_set(float conn_interval_min, float conn_interval_max, uint16_t conn_latency, uint16_t conn_timeout) {
+uint32_t ble_connparam_set(float conn_interval_min, float conn_interval_max, uint16_t conn_latency, uint16_t conn_timeout) {
     uint32_t err_code;
     ble_conn_params_init_t cp_init;
     ble_gap_conn_params_t temp_gap_conn_params;
@@ -1056,7 +1056,7 @@ uint32_t ble_manager_connparam_set(float conn_interval_min, float conn_interval_
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_connparam_read(float *conn_interval_min, float *conn_interval_max, uint16_t *conn_latency, uint16_t *conn_timeout) {
+uint32_t ble_connparam_get(float *conn_interval_min, float *conn_interval_max, uint16_t *conn_latency, uint16_t *conn_timeout) {
     *conn_interval_min = UNITS_TO_MSEC((float)m_gap_conn_params.min_conn_interval, UNIT_1_25_MS);
     *conn_interval_max = UNITS_TO_MSEC((float)m_gap_conn_params.max_conn_interval, UNIT_1_25_MS);
     *conn_latency = m_gap_conn_params.slave_latency;
@@ -1065,7 +1065,7 @@ uint32_t ble_manager_connparam_read(float *conn_interval_min, float *conn_interv
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_addr_read(uint8_t *addr) {
+uint32_t ble_addr_get(uint8_t *addr) {
     uint32_t err_code;
     ble_gap_addr_t gap_addr;
 
@@ -1077,7 +1077,7 @@ uint32_t ble_manager_addr_read(uint8_t *addr) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_name_set(uint8_t *name) {
+uint32_t ble_name_set(uint8_t *name) {
     uint32_t err_code;
     ble_gap_conn_sec_mode_t sec_mode;
     ble_adv_mode_t current_mode = m_advertising.adv_mode_current;
@@ -1104,7 +1104,7 @@ uint32_t ble_manager_name_set(uint8_t *name) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_name_read(uint8_t *name) {
+uint32_t ble_name_get(uint8_t *name) {
     uint32_t err_code;
     uint8_t temp_name[31];
     uint16_t temp_length = 31;
@@ -1117,7 +1117,7 @@ uint32_t ble_manager_name_read(uint8_t *name) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_advertise(uint8_t start) {
+uint32_t ble_advertise(uint8_t start) {
     uint32_t err_code;
 
     if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
@@ -1136,7 +1136,7 @@ uint32_t ble_manager_advertise(uint8_t start) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_disconnect() {
+uint32_t ble_disconnect() {
     uint32_t err_code;
 
     if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
@@ -1149,7 +1149,7 @@ uint32_t ble_manager_disconnect() {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_rssi_read(int8_t *rssi) {
+uint32_t ble_rssi_get(int8_t *rssi) {
     uint32_t err_code;
     uint8_t ch_index;
 
@@ -1163,7 +1163,7 @@ uint32_t ble_manager_rssi_read(int8_t *rssi) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_restore(void) {
+uint32_t ble_restore(void) {
     uint32_t err_code;
     flash_manager_ble_cfg_t *flash;
 
@@ -1178,7 +1178,7 @@ uint32_t ble_manager_restore(void) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_scan(uint8_t start) {
+uint32_t ble_scan(uint8_t start) {
 
     if (start == BLE_SCAN_START) {
         scan_start();
@@ -1189,7 +1189,7 @@ uint32_t ble_manager_scan(uint8_t start) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_scan_list(device_info_t *list, uint8_t *nb_devices_found) {
+uint32_t ble_scan_list(device_info_t *list, uint8_t *nb_devices_found) {
     uint32_t err_code;
 
     *nb_devices_found = devices_list_index;
@@ -1201,7 +1201,7 @@ uint32_t ble_manager_scan_list(device_info_t *list, uint8_t *nb_devices_found) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_connect(uint8_t *addr) {
+uint32_t ble_connect(uint8_t *addr) {
     uint32_t err_code;
     ble_gap_addr_t gap_addr;
     memcpy(gap_addr.addr, addr, BLE_GAP_ADDR_LEN);

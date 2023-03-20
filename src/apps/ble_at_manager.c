@@ -172,7 +172,7 @@ static at_ret_code_t at_deepsleep_set(const uint8_t *param) {
 }
 
 static at_ret_code_t at_factory_reset(const uint8_t *param) {
-    ble_manager_restore();
+    ble_restore();
     ser_pkt_fw_restore();
 
     NVIC_SystemReset();
@@ -186,7 +186,7 @@ static at_ret_code_t at_connstate_read(const uint8_t *param) {
     uint8_t state;
 
     // Read value
-    err_code = ble_manager_connstate_read(&state);
+    err_code = ble_connection_state_get(&state);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -213,7 +213,7 @@ at_ret_code_t at_dcdc_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_dcdc_set(dcdc_mode);
+    err_code = ble_dcdc_set(dcdc_mode);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -226,7 +226,7 @@ at_ret_code_t at_dcdc_read(const uint8_t *param) {
     uint8_t dcdc_mode;
 
     // Read value
-    err_code = ble_manager_dcdc_read(&dcdc_mode);
+    err_code = ble_dcdc_get(&dcdc_mode);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -274,7 +274,7 @@ at_ret_code_t at_txp_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_txp_set(txp);
+    err_code = ble_txp_set(txp);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -287,7 +287,7 @@ at_ret_code_t at_txp_read(const uint8_t *param) {
     int8_t txp;
 
     // Read value
-    err_code = ble_manager_txp_read(&txp);
+    err_code = ble_txp_get(&txp);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -338,7 +338,7 @@ at_ret_code_t at_phy_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_phy_set(phy_tx, phy_rx);
+    err_code = ble_phy_set(phy_tx, phy_rx);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -351,7 +351,7 @@ at_ret_code_t at_phy_read(const uint8_t *param) {
     uint8_t phy_tx, phy_rx;
 
     // Read value
-    err_code = ble_manager_phy_read(&phy_tx, &phy_rx);
+    err_code = ble_phy_get(&phy_tx, &phy_rx);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -394,7 +394,7 @@ at_ret_code_t at_connparam_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_connparam_set(interval_min, interval_max, latency, timeout);
+    err_code = ble_connparam_set(interval_min, interval_max, latency, timeout);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -410,7 +410,7 @@ at_ret_code_t at_connparam_read(const uint8_t *param) {
     uint16_t timeout;
 
     // Read value
-    err_code = ble_manager_connparam_read(&interval_min, &interval_max, &latency, &timeout);
+    err_code = ble_connparam_get(&interval_min, &interval_max, &latency, &timeout);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -453,7 +453,7 @@ at_ret_code_t at_addr_read(const uint8_t *param) {
     at_ret_code_t at_err_code;
     uint8_t devaddr[6];
 
-    err_code = ble_manager_addr_read(devaddr);
+    err_code = ble_addr_get(devaddr);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -527,7 +527,7 @@ at_ret_code_t at_disconnect_set(const uint8_t *param) {
     at_ret_code_t at_err_code;
 
     // Run command
-    err_code = ble_manager_disconnect();
+    err_code = ble_disconnect();
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -540,7 +540,7 @@ at_ret_code_t at_rssi_read(const uint8_t *param) {
     int8_t rssi;
 
     // Read value
-    err_code = ble_manager_rssi_read(&rssi);
+    err_code = ble_rssi_get(&rssi);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -565,17 +565,17 @@ at_ret_code_t at_role_set(const uint8_t *param) {
     }
 
     // disconnect if a connection is active in the wrong role
-    ble_manager_connstate_read(&conn_state);
+    ble_connection_state_get(&conn_state);
     if ((conn_state == BLE_GAP_ROLE_PERIPH && new_role == BLE_CENTRAL) ||
         (conn_state == BLE_GAP_ROLE_CENTRAL && new_role == BLE_PERIPHERAL)) {
-        ble_manager_disconnect();
+        ble_disconnect();
     }
     // Stop advertising or scan
     if (conn_state == 0 && m_current_role == BLE_PERIPHERAL) {
-        ble_manager_advertise(BLE_ADV_STOP);
+        ble_advertise(BLE_ADV_STOP);
     }
     if (conn_state == 0 && m_current_role == BLE_CENTRAL) {
-        ble_manager_scan(BLE_SCAN_STOP);
+        ble_scan(BLE_SCAN_STOP);
     }
 
     m_current_role = new_role;
@@ -621,7 +621,7 @@ at_ret_code_t at_name_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_name_set(name);
+    err_code = ble_name_set(name);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -639,7 +639,7 @@ at_ret_code_t at_name_read(const uint8_t *param) {
     }
 
     // Read value
-    err_code = ble_manager_name_read(name);
+    err_code = ble_name_get(name);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -670,7 +670,7 @@ at_ret_code_t at_advparam_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_advparam_set(interval);
+    err_code = ble_advparam_set(interval);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -688,7 +688,7 @@ at_ret_code_t at_advparam_read(const uint8_t *param) {
     }
 
     // Read value
-    err_code = ble_manager_advparam_read(&interval);
+    err_code = ble_advparam_get(&interval);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -733,7 +733,7 @@ at_ret_code_t at_advertise_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_advertise(start);
+    err_code = ble_advertise(start);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -762,7 +762,7 @@ at_ret_code_t at_scan_start_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_scan(BLE_SCAN_START);
+    err_code = ble_scan(BLE_SCAN_START);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -779,7 +779,7 @@ at_ret_code_t at_scan_stop_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_scan(BLE_SCAN_STOP);
+    err_code = ble_scan(BLE_SCAN_STOP);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -800,7 +800,7 @@ at_ret_code_t at_scan_list_read(const uint8_t *param) {
     }
 
     // Read value
-    err_code = ble_manager_scan_list(scan_list, &nb_device_found);
+    err_code = ble_scan_list(scan_list, &nb_device_found);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -833,7 +833,7 @@ at_ret_code_t at_connect_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_manager_connect(addr);
+    err_code = ble_connect(addr);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 

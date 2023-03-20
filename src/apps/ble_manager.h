@@ -64,7 +64,7 @@ uint32_t ble_manager_init();
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_connstate_read(uint8_t *state);
+uint32_t ble_connection_state_get(uint8_t *state);
 
 /**@brief Function for setting the DCDC mode.
  *
@@ -73,7 +73,7 @@ uint32_t ble_manager_connstate_read(uint8_t *state);
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
-uint32_t ble_manager_dcdc_set(uint8_t mode);
+uint32_t ble_dcdc_set(uint8_t mode);
 
 /**@brief Function for getting the DCDC mode.
  *
@@ -81,7 +81,7 @@ uint32_t ble_manager_dcdc_set(uint8_t mode);
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_dcdc_read(uint8_t *mode);
+uint32_t ble_dcdc_get(uint8_t *mode);
 
 /**@brief Function for setting the transmit power.
  *
@@ -90,7 +90,7 @@ uint32_t ble_manager_dcdc_read(uint8_t *mode);
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
-uint32_t ble_manager_txp_set(int8_t txp);
+uint32_t ble_txp_set(int8_t txp);
 
 /**@brief Function for getting the transmit power.
  *
@@ -98,7 +98,7 @@ uint32_t ble_manager_txp_set(int8_t txp);
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_txp_read(int8_t *txp);
+uint32_t ble_txp_get(int8_t *txp);
 
 /**@brief Function for setting the phy.
  *
@@ -108,7 +108,7 @@ uint32_t ble_manager_txp_read(int8_t *txp);
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
-uint32_t ble_manager_phy_set(uint8_t phy_tx, uint8_t phy_rx);
+uint32_t ble_phy_set(uint8_t phy_tx, uint8_t phy_rx);
 
 /**@brief Function for getting the phy.
  *
@@ -117,7 +117,7 @@ uint32_t ble_manager_phy_set(uint8_t phy_tx, uint8_t phy_rx);
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_phy_read(uint8_t *phy_tx, uint8_t *phy_rx);
+uint32_t ble_phy_get(uint8_t *phy_tx, uint8_t *phy_rx);
 
 /**@brief Function for setting the advertising parameters.
  *
@@ -126,7 +126,7 @@ uint32_t ble_manager_phy_read(uint8_t *phy_tx, uint8_t *phy_rx);
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
-uint32_t ble_manager_advparam_set(uint16_t interval);
+uint32_t ble_advparam_set(uint16_t interval);
 
 /**@brief Function for getting the advertising parameters.
  *
@@ -134,7 +134,7 @@ uint32_t ble_manager_advparam_set(uint16_t interval);
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_advparam_read(uint16_t *interval);
+uint32_t ble_advparam_get(uint16_t *interval);
 
 /**@brief Function for setting the connection parameters.
  *
@@ -146,7 +146,7 @@ uint32_t ble_manager_advparam_read(uint16_t *interval);
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
-uint32_t ble_manager_connparam_set(float conn_interval_min, float conn_interval_max, uint16_t conn_latency, uint16_t conn_timeout);
+uint32_t ble_connparam_set(float conn_interval_min, float conn_interval_max, uint16_t conn_latency, uint16_t conn_timeout);
 
 /**@brief Function for getting the advertising parameters.
  *
@@ -157,7 +157,7 @@ uint32_t ble_manager_connparam_set(float conn_interval_min, float conn_interval_
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_connparam_read(float *conn_interval_min, float *conn_interval_max, uint16_t *conn_latency, uint16_t *conn_timeout);
+uint32_t ble_connparam_get(float *conn_interval_min, float *conn_interval_max, uint16_t *conn_latency, uint16_t *conn_timeout);
 
 
 /**@brief Function for setting the device name.
@@ -167,7 +167,7 @@ uint32_t ble_manager_connparam_read(float *conn_interval_min, float *conn_interv
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
-uint32_t ble_manager_name_set(uint8_t *name);
+uint32_t ble_name_set(uint8_t *name);
 
 /**@brief Function for getting the advertising parameters.
  *
@@ -175,7 +175,7 @@ uint32_t ble_manager_name_set(uint8_t *name);
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_name_read(uint8_t *name);
+uint32_t ble_name_get(uint8_t *name);
 
 /**@brief Function for starting/stopping advertising.
  *
@@ -184,7 +184,7 @@ uint32_t ble_manager_name_read(uint8_t *name);
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
-uint32_t ble_manager_advertise(uint8_t start);
+uint32_t ble_advertise(uint8_t start);
 
 
 /**@brief Function for disconnecting from the peer.
@@ -192,7 +192,7 @@ uint32_t ble_manager_advertise(uint8_t start);
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_STATE  Operation failure. Not connected
  */
-uint32_t ble_manager_disconnect();
+uint32_t ble_disconnect();
 
 /**@brief Function for getting the last rssi.
  *
@@ -200,7 +200,7 @@ uint32_t ble_manager_disconnect();
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_rssi_read(int8_t *rssi);
+uint32_t ble_rssi_get(int8_t *rssi);
 
 /**@brief Function for getting the device BLE address.
  *
@@ -208,13 +208,13 @@ uint32_t ble_manager_rssi_read(int8_t *rssi);
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_addr_read(uint8_t *addr);
+uint32_t ble_addr_get(uint8_t *addr);
 
 /**@brief Function for restauring default parameters.
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_restore(void);
+uint32_t ble_restore(void);
 
 /**@brief Function for starting or stopping scan.
  *
@@ -222,10 +222,23 @@ uint32_t ble_manager_restore(void);
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_manager_scan(uint8_t start);
+uint32_t ble_scan(uint8_t start);
 
-uint32_t ble_manager_scan_list(device_info_t *list, uint8_t *nb_devices_found);
+/**@brief Function for getting result of the scan.
+ *
+ * @param[out] list                 pointer to the lidt of devices
+ * @param[out] nb_devices           number of devices found
+ *
+ * @retval NRF_SUCCESS              Operation success.
+ */
+uint32_t ble_scan_list(device_info_t *list, uint8_t *nb_devices);
 
-uint32_t ble_manager_connect(uint8_t *addr);
+/**@brief Function for connecting to a peripheral.
+ *
+ * @param[in] addr                  Address of the device to connect to
+ *
+ * @retval NRF_SUCCESS              Operation success.
+ */
+uint32_t ble_connect(uint8_t *addr);
 
 #endif
