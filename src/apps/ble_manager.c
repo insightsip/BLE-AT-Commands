@@ -35,10 +35,10 @@
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_soc.h"
 
+#include "boards.h"
 #include "flash_manager.h"
 #include "ser_phy.h" // Only for ser_phy_buffer_length_set(...)
 #include "ser_pkt_fw.h"
-#include "boards.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -64,6 +64,16 @@
 #define APP_ADV_INTERVAL 500                                 /**< The advertising interval (in ms). */
 #define APP_ADV_DURATION 0                                   /**< The advertising duration in units of 10 milliseconds. */
 #define NUS_SERVICE_UUID_TYPE BLE_UUID_TYPE_VENDOR_BEGIN     /**< UUID type for the Nordic UART Service (vendor specific). */
+#define DEVICE_LIST_LENGTH 10
+#define NRF_BLE_GQ_QUEUE_SIZE 8 /**< Queue size for BLE GATT Queue module. */
+
+typedef struct
+{
+    ble_gap_addr_t gap_addr;
+    uint8_t name[21];
+    uint8_t name_length;
+    int8_t rssi;
+} device_info_t;
 
 NRF_BLE_GATT_DEF(m_gatt);                         /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                           /**< Context for the Queued Write module.*/
@@ -86,6 +96,7 @@ static ble_uuid_t const m_nus_uuid =
         .type = NUS_SERVICE_UUID_TYPE};
 
 static ble_uuid_t m_adv_uuids[] = {m_nus_uuid}; /**< Universally unique service identifier. */
+static device_info_t found_devices[DEVICE_LIST_LENGTH];
 
 static uint8_t m_dcdc_mode = 0;                              /**< Current DCDC mode. */
 static int8_t m_txp = 0;                                     /**< Current txp. */
@@ -120,6 +131,26 @@ static void ser_pkt_fw_event_handler(ser_pkt_fw_evt_t event) {
         break;
     }
     }
+}
+static uint8_t devices_list_index = 0;
+uint8_t get_devices_list_id(ble_gap_addr_t gap_addr) {
+    uint8_t device_index = 0;
+
+    /* check address type - TODO */
+    // if(gap_addr.addr_type == BLE_GAP_ADDR_TYPE_PUBLIC)
+
+    /* seek address in found device list */
+    while ((0 != strncmp((const char *)(gap_addr.addr), (const char *)(found_devices[device_index].gap_addr.addr), (size_t)6)) && (device_index < devices_list_index)) {
+        device_index++;
+    }
+
+    /* if the address has not been found in the list */
+    if (device_index >= devices_list_index) {
+        /* return "not found" value */
+        device_index = 0xFF;
+    }
+
+    return device_index;
 }
 
 /**@brief Function for updating new configuration in the flash.
@@ -554,20 +585,61 @@ static uint32_t scan_start(void) {
     return NRF_SUCCESS;
 }
 
+/**@brief Function to stop scanning. */
+static uint32_t scan_stop(void) {
+    nrf_ble_scan_stop();
+
+    return NRF_SUCCESS;
+}
+
 /**@brief Function for handling Scanning Module events.
  */
 static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
     ret_code_t err_code;
 
     switch (p_scan_evt->scan_evt_id) {
+    case NRF_BLE_SCAN_EVT_NOT_FOUND: {
+        uint8_t index = 0;
+        uint16_t offset = 0;
+        uint16_t length = 0;
+        ble_gap_evt_adv_report_t const *p_adv_report = p_scan_evt->params.p_not_found;
+        index = get_devices_list_id(p_adv_report->peer_addr);
+        if (index != 0xFF) {
+            length = ble_advdata_search(p_adv_report->data.p_data, p_adv_report->data.len, &offset, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME);
+            if (length == 0) {
+                // Look for the short local name if it was not found as complete.
+                length = ble_advdata_search(p_adv_report->data.p_data, p_adv_report->data.len, &offset, BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME);
+            }
+            if (length != 0) {
+                memcpy(found_devices[index].name, &p_adv_report->data.p_data[offset], length);
+            }
+        }
+    } break;
+
+    case NRF_BLE_SCAN_EVT_FILTER_MATCH: {
+        uint8_t index = 0;
+        ble_gap_evt_adv_report_t const *p_adv_report = p_scan_evt->params.filter_match.p_adv_report;
+
+        index = get_devices_list_id(p_adv_report->peer_addr);
+
+        // Device not found in the list
+        if (index == 0xFF) {
+            index = devices_list_index;
+            devices_list_index++;
+            // insert new device in the list
+            strncpy((char *)(found_devices[index].gap_addr.addr), (char *)(p_adv_report->peer_addr.addr), (size_t)6);
+            found_devices[index].gap_addr.addr_type = p_adv_report->peer_addr.addr_type;
+            found_devices[index].rssi = p_adv_report->rssi;
+        }
+    } break;
+
     case NRF_BLE_SCAN_EVT_CONNECTING_ERROR: {
         err_code = p_scan_evt->params.connecting_err.err_code;
         APP_ERROR_CHECK(err_code);
     } break;
 
     case NRF_BLE_SCAN_EVT_CONNECTED: {
-        ble_gap_evt_connected_t const *p_connected =
-            p_scan_evt->params.connected.p_connected;
+        ble_gap_evt_connected_t const *p_connected = p_scan_evt->params.connected.p_connected;
         // Scan is automatically stopped by the connection.
         NRF_LOG_INFO("Connecting to target %02x%02x%02x%02x%02x%02x",
             p_connected->peer_addr.addr[0],
@@ -596,7 +668,7 @@ static uint32_t scan_init(void) {
 
     memset(&init_scan, 0, sizeof(init_scan));
 
-    init_scan.connect_if_match = true;
+    init_scan.connect_if_match = false;
     init_scan.conn_cfg_tag = APP_BLE_CONN_CFG_TAG;
 
     err_code = nrf_ble_scan_init(&m_scan, &init_scan, scan_evt_handler);
@@ -773,9 +845,6 @@ uint32_t ble_manager_init() {
 
     m_state = BLE_MANAGER_STATE_IDLE;
 
-    // Start advertising
-    advertising_start();
-
     return err_code;
 }
 
@@ -783,7 +852,7 @@ uint32_t ble_manager_connstate_read(uint8_t *state) {
     if (m_conn_handle == BLE_CONN_HANDLE_INVALID) {
         *state = 0;
     } else {
-        *state =  ble_conn_state_role(m_conn_handle);
+        *state = ble_conn_state_role(m_conn_handle);
     }
 
     return NRF_SUCCESS;
@@ -889,7 +958,6 @@ uint32_t ble_manager_advparam_set(uint16_t interval) {
     init.srdata.uuids_complete.p_uuids = m_adv_uuids;
     init.config.ble_adv_fast_enabled = true;
     init.config.ble_adv_fast_interval = MSEC_TO_UNITS(interval, UNIT_0_625_MS);
-    ;
     init.config.ble_adv_fast_timeout = 0;
     init.evt_handler = on_adv_evt;
 
@@ -1035,7 +1103,7 @@ uint32_t ble_manager_advertise(uint8_t start) {
         return NRF_ERROR_INVALID_STATE;
     }
 
-    if (start = BLE_ADV_START) {
+    if (start == BLE_ADV_START) {
         err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
         VERIFY_SUCCESS(err_code);
     } else {
@@ -1087,4 +1155,13 @@ uint32_t ble_manager_restore(void) {
     }
 
     return NRF_SUCCESS;
+}
+
+uint32_t ble_manager_scan(uint8_t start) {
+
+    if (start) {
+        scan_start();
+    } else {
+        scan_stop();
+    }
 }

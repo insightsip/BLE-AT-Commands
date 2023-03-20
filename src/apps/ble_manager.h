@@ -204,4 +204,12 @@ uint32_t ble_manager_addr_read(uint8_t *addr);
  */
 uint32_t ble_manager_restore(void);
 
+/**@brief Function for starting or stopping scan.
+ *
+ * @param[in] start                 start/stop scannning
+ *
+ * @retval NRF_SUCCESS              Operation success.
+ */
+uint32_t ble_manager_scan(uint8_t start);
+
 #endif

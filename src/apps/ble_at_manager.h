@@ -51,11 +51,11 @@ typedef enum
 #define AT_RESET            "Z"
 #define AT_ECHO             "E"
 #define AT_INFO             "I"
+#define AT_VERSION          "+VERSION"
 #define AT_DEEPSLEEP        "+DEEPSLEEP"
 #define AT_UART             "+UART"
 #define AT_DCDC             "+DCDC"
 #define AT_FACTORYRESET     "+FACTORYRESET"
-#define AT_VERSION          "+VERSION"
 #define AT_BLE_CONNSTATE    "+BLECONNSTATE"
 #define AT_BLE_TXP          "+BLETXP"
 #define AT_BLE_PHY          "+BLEPHY"
@@ -69,7 +69,7 @@ typedef enum
 #define AT_BLE_NAME         "+BLENAME"
 #define AT_BLE_ADVERTISE    "+BLEADVERTISE"
 /* Central */
-#define AT_SCAN             "+SCAN"
+#define AT_SCAN             "+BLESCAN"
 #define AT_FOUND            "+FOUND"
 #define AT_CONNECT          "+CONNECT"
 

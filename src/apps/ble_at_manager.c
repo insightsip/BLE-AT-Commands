@@ -798,7 +798,6 @@ at_error_code_t at_advertise_set(const uint8_t *param)
         return AT_ERROR_FORBIDDEN;
     }
 
-
     // Check parameters
     if (sscanf(param, "%u", &start) != 1)
     {
@@ -834,6 +833,41 @@ at_error_code_t at_advertise_test(const uint8_t *param)
     return AT_OK;
 }
 
+at_error_code_t at_scan_set(const uint8_t *param)
+{
+    uint32_t err_code;
+    at_error_code_t at_err_code;
+    int start = 0;
+
+    // Check that role is Peripheral
+    if (m_current_role != BLE_CENTRAL)
+    {
+        return AT_ERROR_FORBIDDEN;
+    }
+
+
+    // Check parameters
+    if (sscanf(param, "%u", &start) != 1)
+    {
+        return AT_ERROR_INVALID_PARAM;
+    }
+
+    start = (uint8_t)start;
+
+    if (start > 1)
+    {
+        return AT_ERROR_INVALID_PARAM;
+    }
+
+    // Run command
+    err_code = ble_manager_scan(start);
+    CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
+    AT_VERIFY_SUCCESS(at_err_code);
+
+    return AT_OK;
+}
+
+
 /**
  * @brief  List of all supported AT Commands
  */
@@ -859,7 +893,7 @@ static at_command_t at_commands[] =
     AT_COMMAND_DEF (AT_BLE_NAME,        at_name_set,            at_name_read,           at_error_supported),
     AT_COMMAND_DEF (AT_BLE_ADVPARAM,    at_advparam_set,        at_advparam_read,       at_advparam_test),
 #if defined(BLE_CAP_CENTRAL)
-    AT_COMMAND_DEF (AT_SCAN,            at_error_not_supported, at_error_not_supported,  at_error_supported),
+    AT_COMMAND_DEF (AT_SCAN,            at_scan_set,            at_error_not_supported,  at_error_supported),
     AT_COMMAND_DEF (AT_FOUND,           at_error_not_supported, at_error_not_supported,  at_error_supported),
     AT_COMMAND_DEF (AT_CONNECT,         at_error_not_supported, at_error_not_supported,  at_error_supported),
 #endif //defined(BLE_CAP_CENTRAL)

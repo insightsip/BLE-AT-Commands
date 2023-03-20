@@ -58,7 +58,7 @@ void uart_event_handler (app_uart_evt_t * p_event)
             UNUSED_VARIABLE(app_uart_get(&m_rx_buffer[index]));
             index++;
 
-            if ((m_rx_buffer[index - 1] == '\r') || (m_rx_buffer[index - 1] == '\n') || (index >= (m_ble_nus_max_data_len)))
+            if ((m_rx_buffer[index - 1] == '\r') || (m_rx_buffer[index - 1] == '\n') || (index >= (UART_RX_BUF_SIZE)))
             {
                 if (index > 1)
                 {
