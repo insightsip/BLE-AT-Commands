@@ -552,7 +552,6 @@ static uint32_t advertising_start(void) {
     return NRF_SUCCESS;
 }
 
-#if defined(BLE_CAP_CENTRAL)
 /**@brief Function for handling database discovery events.
  *
  * @param[in] p_event  Pointer to the database discovery event.
@@ -701,7 +700,6 @@ static uint32_t scan_init(void) {
 
     return NRF_SUCCESS;
 }
-#endif // defined(BLE_CAP_CENTRAL)
 
 /**@brief Function for handling Queued Write Module errors.
  *
