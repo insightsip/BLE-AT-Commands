@@ -1159,7 +1159,7 @@ uint32_t ble_manager_restore(void) {
 
 uint32_t ble_manager_scan(uint8_t start) {
 
-    if (start) {
+    if (start == BLE_SCAN_START) {
         scan_start();
     } else {
         scan_stop();
