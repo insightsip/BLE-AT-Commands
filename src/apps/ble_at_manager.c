@@ -73,9 +73,9 @@ typedef struct
 {
     const uint8_t *name;                           /*< command name, after the "AT" */
     const uint8_t name_size;                       /*< size of the command name, not including the final \r or \n */
-    at_error_code_t (*set)(const uint8_t *param);  /*< = after the string to set a new value, or \0 if not parameters*/
-    at_error_code_t (*read)(const uint8_t *param); /*< ? after the name to get the current value*/
-    at_error_code_t (*test)(const uint8_t *param); /*< =? test command */
+    at_ret_code_t (*set)(const uint8_t *param);  /*< = after the string to set a new value, or \0 if not parameters*/
+    at_ret_code_t (*read)(const uint8_t *param); /*< ? after the name to get the current value*/
+    at_ret_code_t (*test)(const uint8_t *param); /*< =? test command */
 } at_command_t;
 
 static bool m_at_command_ready = false;
@@ -107,21 +107,21 @@ static const uint8_t *at_error_description[] =
         "ERROR\r\n",                /* AT_MAX */
 };
 
-static at_error_code_t at_error_not_supported(const uint8_t *param) {
+static at_ret_code_t at_error_not_supported(const uint8_t *param) {
     return AT_ERROR_NOT_SUPPORTED;
 }
 
-static at_error_code_t at_error_supported(const uint8_t *param) {
+static at_ret_code_t at_error_supported(const uint8_t *param) {
     return AT_OK;
 }
 
-static at_error_code_t at_reset(const uint8_t *param) {
+static at_ret_code_t at_reset(const uint8_t *param) {
     NVIC_SystemReset();
 
     return AT_OK;
 }
 
-static at_error_code_t at_echo_set(const uint8_t *param) {
+static at_ret_code_t at_echo_set(const uint8_t *param) {
     int echo;
 
     // Check parameters
@@ -140,7 +140,7 @@ static at_error_code_t at_echo_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_echo_read(const uint8_t *param) {
+at_ret_code_t at_echo_read(const uint8_t *param) {
     // Send response
     sprintf(m_tx_buffer, "%s: %u\r\n", AT_ECHO, m_echo);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
@@ -148,7 +148,7 @@ at_error_code_t at_echo_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_info_read(const uint8_t *param) {
+at_ret_code_t at_info_read(const uint8_t *param) {
     // Send module name
     sprintf(m_tx_buffer, "%s\r\n", MODULE_NAME);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
@@ -164,14 +164,14 @@ at_error_code_t at_info_read(const uint8_t *param) {
     return AT_OK;
 }
 
-static at_error_code_t at_deepsleep_set(const uint8_t *param) {
+static at_ret_code_t at_deepsleep_set(const uint8_t *param) {
     ser_pkt_fw_release();
     nrf_pwr_mgmt_shutdown(NRF_PWR_MGMT_SHUTDOWN_GOTO_SYSOFF);
 
     return AT_OK;
 }
 
-static at_error_code_t at_factory_reset(const uint8_t *param) {
+static at_ret_code_t at_factory_reset(const uint8_t *param) {
     ble_manager_restore();
     ser_pkt_fw_restore();
 
@@ -180,9 +180,9 @@ static at_error_code_t at_factory_reset(const uint8_t *param) {
     return AT_OK;
 }
 
-static at_error_code_t at_connstate_read(const uint8_t *param) {
+static at_ret_code_t at_connstate_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t state;
 
     // Read value
@@ -196,9 +196,9 @@ static at_error_code_t at_connstate_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_dcdc_set(const uint8_t *param) {
+at_ret_code_t at_dcdc_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     int dcdc_mode;
 
     // Check parameters
@@ -220,9 +220,9 @@ at_error_code_t at_dcdc_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_dcdc_read(const uint8_t *param) {
+at_ret_code_t at_dcdc_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t dcdc_mode;
 
     // Read value
@@ -237,7 +237,7 @@ at_error_code_t at_dcdc_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_dcdc_test(const uint8_t *param) {
+at_ret_code_t at_dcdc_test(const uint8_t *param) {
     // Send response
     sprintf(m_tx_buffer, "%s: (0,1)\r\n", AT_DCDC);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
@@ -245,7 +245,7 @@ at_error_code_t at_dcdc_test(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_version_read(const uint8_t *param) {
+at_ret_code_t at_version_read(const uint8_t *param) {
     // Send response
     sprintf(m_tx_buffer, "%s: %s\r\n", AT_VERSION, FW_REVISION);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
@@ -253,9 +253,9 @@ at_error_code_t at_version_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_txp_set(const uint8_t *param) {
+at_ret_code_t at_txp_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     int txp;
 
     // Check parameters
@@ -281,9 +281,9 @@ at_error_code_t at_txp_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_txp_read(const uint8_t *param) {
+at_ret_code_t at_txp_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     int8_t txp;
 
     // Read value
@@ -298,7 +298,7 @@ at_error_code_t at_txp_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_txp_test(const uint8_t *param) {
+at_ret_code_t at_txp_test(const uint8_t *param) {
     // send response
 #if (BLE_MAX_TXP_8DBM == 1)
     sprintf(m_tx_buffer, "%s: (-40,-20,-16,-12,-8,-4,0,3,4,5,6,7,8)\r\n", AT_BLE_TXP);
@@ -310,9 +310,9 @@ at_error_code_t at_txp_test(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_phy_set(const uint8_t *param) {
+at_ret_code_t at_phy_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     int phy_tx, phy_rx;
 
     // Check parameters
@@ -345,9 +345,9 @@ at_error_code_t at_phy_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_phy_read(const uint8_t *param) {
+at_ret_code_t at_phy_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t phy_tx, phy_rx;
 
     // Read value
@@ -362,7 +362,7 @@ at_error_code_t at_phy_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_phy_test(const uint8_t *param) {
+at_ret_code_t at_phy_test(const uint8_t *param) {
 #if (BLE_CAP_PHY_CODED == 1)
     sprintf(m_tx_buffer, "%s: (0,1,2,4),(0,1,2,4)\r\n", AT_BLE_PHY);
 #else
@@ -373,9 +373,9 @@ at_error_code_t at_phy_test(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_connparam_set(const uint8_t *param) {
+at_ret_code_t at_connparam_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     float interval_min;
     float interval_max;
     uint32_t latency;
@@ -401,9 +401,9 @@ at_error_code_t at_connparam_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_connparam_read(const uint8_t *param) {
+at_ret_code_t at_connparam_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     float interval_min;
     float interval_max;
     uint16_t latency;
@@ -421,16 +421,16 @@ at_error_code_t at_connparam_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_connparam_test(const uint8_t *param) {
+at_ret_code_t at_connparam_test(const uint8_t *param) {
     sprintf(m_tx_buffer, "%s: (7.5-4000),(7.5-4000),(0-500),(10-32000)\r\n", AT_BLE_CONNPARAM);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
 }
 
-at_error_code_t at_addr_set(const uint8_t *param) {
+at_ret_code_t at_addr_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t devaddr[6];
 
     // Check parameters
@@ -448,9 +448,9 @@ at_error_code_t at_addr_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_addr_read(const uint8_t *param) {
+at_ret_code_t at_addr_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t devaddr[6];
 
     err_code = ble_manager_addr_read(devaddr);
@@ -465,16 +465,16 @@ at_error_code_t at_addr_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_addr_test(const uint8_t *param) {
+at_ret_code_t at_addr_test(const uint8_t *param) {
     sprintf(m_tx_buffer, "%s: hh-hh-hh-hh-hh-hh\r\n", AT_BLE_ADDR);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
 }
 
-at_error_code_t at_uart_set(const uint8_t *param) {
+at_ret_code_t at_uart_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     int flowcontrol;
     int baudrate;
 
@@ -497,9 +497,9 @@ at_error_code_t at_uart_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_uart_read(const uint8_t *param) {
+at_ret_code_t at_uart_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t flowcontrol;
     uint32_t baudrate;
 
@@ -515,16 +515,16 @@ at_error_code_t at_uart_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_uart_test(const uint8_t *param) {
+at_ret_code_t at_uart_test(const uint8_t *param) {
     sprintf(m_tx_buffer, "%s: (0,1),(1200,2400,4800,9600,19200,38400,57600,115200,230400,460800,921600,1000000)\r\n", AT_UART);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
 }
 
-at_error_code_t at_disconnect_set(const uint8_t *param) {
+at_ret_code_t at_disconnect_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
 
     // Run command
     err_code = ble_manager_disconnect();
@@ -534,9 +534,9 @@ at_error_code_t at_disconnect_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_rssi_read(const uint8_t *param) {
+at_ret_code_t at_rssi_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     int8_t rssi;
 
     // Read value
@@ -551,9 +551,9 @@ at_error_code_t at_rssi_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_role_set(const uint8_t *param) {
+at_ret_code_t at_role_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t new_role, conn_state;
 
     // Check parameters
@@ -586,9 +586,9 @@ at_error_code_t at_role_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_role_read(const uint8_t *param) {
+at_ret_code_t at_role_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t flowcontrol;
     uint32_t baudrate;
 
@@ -599,16 +599,16 @@ at_error_code_t at_role_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_role_test(const uint8_t *param) {
+at_ret_code_t at_role_test(const uint8_t *param) {
     sprintf(m_tx_buffer, "%s: (0=Peripheral,1=Central)\r\n", AT_BLE_ROLE);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
 }
 
-at_error_code_t at_name_set(const uint8_t *param) {
+at_ret_code_t at_name_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t *name = param;
 
     // Check that role is Peripheral
@@ -628,9 +628,9 @@ at_error_code_t at_name_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_name_read(const uint8_t *param) {
+at_ret_code_t at_name_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t name[31] = "";
 
     // Check that role is Peripheral
@@ -650,9 +650,9 @@ at_error_code_t at_name_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_advparam_set(const uint8_t *param) {
+at_ret_code_t at_advparam_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     int interval;
 
     // Check that role is Peripheral
@@ -677,9 +677,9 @@ at_error_code_t at_advparam_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_advparam_read(const uint8_t *param) {
+at_ret_code_t at_advparam_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint16_t interval;
 
     // Check that role is Peripheral
@@ -699,7 +699,7 @@ at_error_code_t at_advparam_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_advparam_test(const uint8_t *param) {
+at_ret_code_t at_advparam_test(const uint8_t *param) {
     // Check that role is Peripheral
     if (m_current_role != BLE_PERIPHERAL) {
         return AT_ERROR_FORBIDDEN;
@@ -711,9 +711,9 @@ at_error_code_t at_advparam_test(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_advertise_set(const uint8_t *param) {
+at_ret_code_t at_advertise_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     int start = 0;
 
     // Check that role is Peripheral
@@ -740,7 +740,7 @@ at_error_code_t at_advertise_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_advertise_test(const uint8_t *param) {
+at_ret_code_t at_advertise_test(const uint8_t *param) {
     // Check that role is Peripheral
     if (m_current_role != BLE_PERIPHERAL) {
         return AT_ERROR_FORBIDDEN;
@@ -752,9 +752,9 @@ at_error_code_t at_advertise_test(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_scan_start_set(const uint8_t *param) {
+at_ret_code_t at_scan_start_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
 
     // Check that role is Central
     if (m_current_role != BLE_CENTRAL) {
@@ -769,9 +769,9 @@ at_error_code_t at_scan_start_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_scan_stop_set(const uint8_t *param) {
+at_ret_code_t at_scan_stop_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
 
     // Check that role is Central
     if (m_current_role != BLE_CENTRAL) {
@@ -786,9 +786,9 @@ at_error_code_t at_scan_stop_set(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_scan_list_read(const uint8_t *param) {
+at_ret_code_t at_scan_list_read(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     device_info_t scan_list[MAX_SCAN_DEVICE_LIST];
     uint8_t nb_device_found;
     uint8_t addr[BLE_GAP_ADDR_LEN];
@@ -817,9 +817,9 @@ at_error_code_t at_scan_list_read(const uint8_t *param) {
     return AT_OK;
 }
 
-at_error_code_t at_connect_set(const uint8_t *param) {
+at_ret_code_t at_connect_set(const uint8_t *param) {
     uint32_t err_code;
-    at_error_code_t at_err_code;
+    at_ret_code_t at_err_code;
     uint8_t addr[BLE_GAP_ADDR_LEN];
 
     // Check that role is Central
@@ -876,11 +876,11 @@ static at_command_t at_commands[] =
  * @brief  Send final response
  * @param[in]
  */
-static void final_response_send(at_error_code_t err_code) {
-    if (err_code > AT_ERROR_OTHER) {
-        err_code = AT_ERROR_OTHER;
+static void final_response_send(at_ret_code_t at_err_code) {
+    if (at_err_code > AT_ERROR_OTHER) {
+        at_err_code = AT_ERROR_OTHER;
     }
-    ser_pkt_fw_tx_send(at_error_description[err_code], strlen(at_error_description[err_code]), SER_PKT_FW_PORT_AT);
+    ser_pkt_fw_tx_send(at_error_description[at_err_code], strlen(at_error_description[at_err_code]), SER_PKT_FW_PORT_AT);
 }
 
 /**@brief A function for processing the HAL Transport layer events.
@@ -913,8 +913,8 @@ static void ser_pkt_fw_event_handler(ser_pkt_fw_evt_t event) {
     }
 }
 
-at_error_code_t ble_at_manager_execute() {
-    at_error_code_t err_code;
+void ble_at_manager_execute() {
+    at_ret_code_t at_err_code;
     at_command_t *current_at_command;
     uint8_t *p_data;
 
@@ -928,15 +928,15 @@ at_error_code_t ble_at_manager_execute() {
         }
         // Verify that command starts with AT
         if ((m_rx_at_command[0] != 'A') || (m_rx_at_command[1] != 'T')) {
-            err_code = AT_ERROR_UNKNOWN_CMD;
+            at_err_code = AT_ERROR_UNKNOWN_CMD;
         }
         // Search AT commands in the list and execute correponding function
         else {
-            err_code = AT_ERROR_UNKNOWN_CMD;
+            at_err_code = AT_ERROR_UNKNOWN_CMD;
             p_data = m_rx_at_command + 2;
 
             if (p_data[0] == '\r' || p_data[0] == '\n') {
-                err_code = AT_OK;
+                at_err_code = AT_OK;
             } else {
                 for (int i = 0; i < (sizeof(at_commands) / sizeof(at_command_t)); i++) {
                     if (strncmp(p_data, at_commands[i].name, at_commands[i].name_size) == 0) {
@@ -946,14 +946,14 @@ at_error_code_t ble_at_manager_execute() {
 
                         //  Parse the type (set, read or test), and jump to the corresponding function
                         if (p_data[0] == '\r' || p_data[0] == '\n') {
-                            err_code = current_at_command->set(p_data + 1);
+                            at_err_code = current_at_command->set(p_data + 1);
                         } else if (p_data[0] == '?') {
-                            err_code = current_at_command->read(p_data + 1);
+                            at_err_code = current_at_command->read(p_data + 1);
                         } else if (p_data[0] == '=') {
                             if (p_data[1] == '?') {
-                                err_code = current_at_command->test(p_data + 1);
+                                at_err_code = current_at_command->test(p_data + 1);
                             } else if (p_data[1] != '\r' && p_data[1] != '\n') {
-                                err_code = current_at_command->set(p_data + 1);
+                                at_err_code = current_at_command->set(p_data + 1);
                             }
                         }
                         // We end the loop as the command was found
@@ -964,14 +964,14 @@ at_error_code_t ble_at_manager_execute() {
         }
 
         // Send final response
-        final_response_send(err_code);
+        final_response_send(at_err_code);
 
         memset(m_rx_at_command, 0, 128);
         m_at_command_ready = false;
     }
 }
 
-at_error_code_t ble_at_manager_init() {
+ret_code_t ble_at_manager_init() {
     uint32_t err_code;
 
     // Initialize flash manager

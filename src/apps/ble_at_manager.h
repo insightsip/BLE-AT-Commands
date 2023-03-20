@@ -42,7 +42,7 @@ typedef enum {
     AT_ERROR_FORBIDDEN,      // 13
     AT_ERROR_BUSY,           // 14
     AT_ERROR_OTHER,          // 15
-} at_error_code_t;
+} at_ret_code_t;
 
 /* AT Command list */
 /* Common */
@@ -75,7 +75,7 @@ typedef enum {
 #define BLE_PERIPHERAL 0
 #define BLE_CENTRAL 1
 
-at_error_code_t ble_at_manager_init();
-at_error_code_t ble_at_manager_execute();
+uint32_t ble_at_manager_init();
+void ble_at_manager_execute();
 
 #endif
