@@ -284,16 +284,6 @@ at_ret_code_t at_txp_set(const uint8_t *param) {
         return AT_ERROR_INVALID_PARAM;
     }
 
-#if (BLE_MAX_TXP_8DBM == 1)
-    if ((txp != -40) && (txp != -20) && (txp != -16) && (txp != -12) && (txp != -8) && (txp != -4) && (txp != 0) && (txp != 3) && (txp != 4) &&
-        (txp != 5) && (txp != 6) && (txp != 7) && (txp != 8))
-#else
-    if ((txp != -40) && (txp != -20) && (txp != -16) && (txp != -12) && (txp != -8) && (txp != -4) && (txp != 0) && (txp != 3) && (txp != 4))
-#endif
-    {
-        return AT_ERROR_INVALID_PARAM;
-    }
-
     // Run command
     err_code = ble_txp_set(txp);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
@@ -338,23 +328,6 @@ at_ret_code_t at_phy_set(const uint8_t *param) {
 
     // Check parameters
     if (sscanf(param, "%u,%u", &phy_tx, &phy_rx) != 2) {
-        return AT_ERROR_INVALID_PARAM;
-    }
-#if (BLE_CAP_PHY_CODED == 1)
-    if ((phy_tx != 0) && (phy_tx != 1) && (phy_tx != 2) && (phy_tx != 4))
-#else
-    if ((phy_tx != 0) && (phy_tx != 1) && (phy_tx != 2))
-#endif
-    {
-        return AT_ERROR_INVALID_PARAM;
-    }
-
-#if (BLE_CAP_PHY_CODED == 1)
-    if ((phy_rx != 0) && (phy_rx != 1) && (phy_rx != 2) && (phy_rx != 4))
-#else
-    if ((phy_rx != 0) && (phy_rx != 1) && (phy_rx != 2))
-#endif
-    {
         return AT_ERROR_INVALID_PARAM;
     }
 
@@ -683,10 +656,6 @@ at_ret_code_t at_advparam_set(const uint8_t *param) {
 
     // Check parameters
     if (sscanf(param, "%u ,%u", &interval) != 1) {
-        return AT_ERROR_INVALID_PARAM;
-    }
-
-    if ((interval < 20) || (interval > 10240)) {
         return AT_ERROR_INVALID_PARAM;
     }
 
