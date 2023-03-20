@@ -1,4 +1,4 @@
- /******************************************************************************
+/******************************************************************************
  * @file    ble_manager.h
  * @author  Insight SiP
  * @brief   BLE manager
@@ -21,15 +21,14 @@
 #ifndef BLE_MANAGER_H__
 #define BLE_MANAGER_H__
 
-#include <stdint.h>
 #include "nrf_ble_scan.h"
+#include <stdint.h>
 
 #define SER_PKT_FW_PORT_BLE 1
 
 /**@brief BLE manager states.
  */
-typedef enum 
-{
+typedef enum {
     BLE_MANAGER_STATE_INIT = 0,
     BLE_MANAGER_STATE_IDLE,
     BLE_MANAGER_STATE_ADVERTISING,
@@ -48,15 +47,42 @@ typedef struct
 } device_info_t;
 
 #define MAX_SCAN_DEVICE_LIST 10
-#define BLE_ADV_START   1
-#define BLE_ADV_STOP    0
-#define BLE_SCAN_START   1
-#define BLE_SCAN_STOP    0
+#define BLE_ADV_START 1
+#define BLE_ADV_STOP 0
+#define BLE_SCAN_START 1
+#define BLE_SCAN_STOP 0
 
+/**@brief BLE manage event types. */
+typedef enum {
+    BLE_MANAGER_EVT_PHY_CHANGED = 0,     /**< PHY changed event */
+    BLE_MANAGER_EVT_CONN_PARAMS_CHANGED, /**< Connection parameters changed event */
+    BLE_MANAGER_EVT_TYPE_MAX             /**< Enumeration upper bound. */
+} ble_manager_evt_type_t;
+
+/**@brief A struct containing events from a BLE manager.
+ *
+ * @note  Some events do not have parameters, then whole information is contained in the evt_type.
+ */
+typedef struct
+{
+    ble_manager_evt_type_t evt_type; /**< Type of event. */
+
+    //  union  /**< Union alternative identified by evt_type in enclosing struct. */
+    //  {
+    //      ser_phy_evt_rx_pkt_received_params_t rx_pkt_received;
+    //      ser_phy_evt_hw_error_params_t        hw_error;
+    //  } evt_params;
+} ble_manager_evt_t;
+
+/**@brief Callback function handler for the BLE manager.
+ *
+ * @param[in] event    BLE manager event.
+ */
+typedef void (*ble_manager_evt_handler_t)(ble_manager_evt_t evt);
 
 /**@brief Function for opening and initializing the BLE manager.
  */
-uint32_t ble_manager_init();
+uint32_t ble_manager_init(ble_manager_evt_handler_t evt_handler);
 
 /**@brief Function for getting the connection state.
  *
@@ -159,7 +185,6 @@ uint32_t ble_connparam_set(float conn_interval_min, float conn_interval_max, uin
  */
 uint32_t ble_connparam_get(float *conn_interval_min, float *conn_interval_max, uint16_t *conn_latency, uint16_t *conn_timeout);
 
-
 /**@brief Function for setting the device name.
  *
  * @param[in] name                  pointer to device name
@@ -185,7 +210,6 @@ uint32_t ble_name_get(uint8_t *name);
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
 uint32_t ble_advertise(uint8_t start);
-
 
 /**@brief Function for disconnecting from the peer.
  *

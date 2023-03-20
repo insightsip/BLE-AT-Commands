@@ -28,9 +28,9 @@
 #include "nrf_log_default_backends.h"
 #include "nrf_pwr_mgmt.h"
 #include "ser_pkt_fw.h"
+#include "version.h"
 #include <stdbool.h>
 #include <string.h>
-#include "version.h"
 
 /**
  * @brief Macro for creating a new AT Command
@@ -71,8 +71,8 @@
  */
 typedef struct
 {
-    const uint8_t *name;                           /*< command name, after the "AT" */
-    const uint8_t name_size;                       /*< size of the command name, not including the final \r or \n */
+    const uint8_t *name;                         /*< command name, after the "AT" */
+    const uint8_t name_size;                     /*< size of the command name, not including the final \r or \n */
     at_ret_code_t (*set)(const uint8_t *param);  /*< = after the string to set a new value, or \0 if not parameters*/
     at_ret_code_t (*read)(const uint8_t *param); /*< ? after the name to get the current value*/
     at_ret_code_t (*test)(const uint8_t *param); /*< =? test command */
@@ -82,7 +82,15 @@ static bool m_at_command_ready = false;
 static uint8_t m_echo = 0;
 static uint8_t m_rx_at_command[128] = {0};
 static uint8_t m_tx_buffer[128] = {0};
+
 static uint8_t m_current_role = BLE_PERIPHERAL;
+static uint8_t m_dcdc_mode = 0;                              /**< Current DCDC mode. */
+static int8_t m_txp = 0;                                     /**< Current txp. */
+static ble_gap_phys_t m_phys = {0, 0};                       /**< Current phys. */
+static uint8_t m_device_name[26];                            /**< Current device name. */
+static uint16_t m_adv_interval;                              /**< Current advertising interval (in ms). */
+static ble_gap_conn_params_t m_gap_conn_params;              /**< Current connection parameters */
+static ble_gap_scan_params_t m_gap_scan_params;              /**< Current scan parameters */
 
 /**
  * @brief  Array corresponding to the description of each possible AT Error
@@ -106,6 +114,19 @@ static const uint8_t *at_error_description[] =
         "ERROR_BUSY\r\n",           /* AT_ERROR_BUSY */
         "ERROR\r\n",                /* AT_MAX */
 };
+
+/**
+ * @brief A callback function to be used to handleBLE manager events.
+ */
+static void ble_manager_evt_handler(ble_manager_evt_t evt) {
+    switch (evt.evt_type) {
+    case BLE_MANAGER_EVT_PHY_CHANGED:
+        break;
+
+    case BLE_MANAGER_EVT_CONN_PARAMS_CHANGED:
+        break;
+    }
+}
 
 static at_ret_code_t at_error_not_supported(const uint8_t *param) {
     return AT_ERROR_NOT_SUPPORTED;
@@ -805,12 +826,12 @@ at_ret_code_t at_scan_list_read(const uint8_t *param) {
     AT_VERIFY_SUCCESS(at_err_code);
 
     // Send response
-    for (int i=0; i<nb_device_found; i++) {
+    for (int i = 0; i < nb_device_found; i++) {
         memset(name, 0, 26);
         strncpy(name, scan_list[i].name, scan_list[i].name_length);
         memcpy(addr, scan_list[i].gap_addr.addr, BLE_GAP_ADDR_LEN);
-        
-        sprintf(m_tx_buffer, "%s: %d, %s, 0x%x-0x%x-0x%x-0x%x-0x%x-0x%x\r\n", AT_BLE_SCANLIST, scan_list[i].rssi, name, addr[0],addr[1],addr[2],addr[3],addr[4],addr[5]);
+
+        sprintf(m_tx_buffer, "%s: %d, %s, 0x%x-0x%x-0x%x-0x%x-0x%x-0x%x\r\n", AT_BLE_SCANLIST, scan_list[i].rssi, name, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
         ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
     }
 
@@ -979,7 +1000,7 @@ ret_code_t ble_at_manager_init() {
     VERIFY_SUCCESS(err_code);
 
     // Initialize BLE manager
-    err_code = ble_manager_init();
+    err_code = ble_manager_init(ble_manager_evt_handler);
     VERIFY_SUCCESS(err_code);
 
     // Initialize serial packet fowarder

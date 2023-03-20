@@ -80,6 +80,7 @@ NRF_BLE_GQ_DEF(m_ble_gatt_queue,                  /**< BLE GATT Queue instance. 
     NRF_SDH_BLE_CENTRAL_LINK_COUNT,
     NRF_BLE_GQ_QUEUE_SIZE);
 
+static ble_manager_evt_handler_t m_evt_handler;
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;               /**< Handle of the current connection. */
 static uint16_t m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3; /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 
@@ -817,9 +818,16 @@ static uint32_t services_init(void) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_init() {
+uint32_t ble_manager_init(ble_manager_evt_handler_t evt_handler) {
     uint32_t err_code;
     flash_manager_ble_cfg_t *flash;
+
+    // Check and Register event
+    if (evt_handler == NULL)
+    {
+        return NRF_ERROR_NULL;
+    }
+    m_evt_handler = evt_handler;
 
     // Load configuration from flash
     err_code = flash_manager_ble_cfg_load(&flash);
