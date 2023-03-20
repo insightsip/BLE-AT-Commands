@@ -609,7 +609,7 @@ at_ret_code_t at_role_test(const uint8_t *param) {
 at_ret_code_t at_name_set(const uint8_t *param) {
     uint32_t err_code;
     at_ret_code_t at_err_code;
-    uint8_t *name = param;
+    uint8_t *name = (uint8_t *)param;
 
     // Check that role is Peripheral
     if (m_current_role != BLE_PERIPHERAL) {
