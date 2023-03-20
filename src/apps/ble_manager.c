@@ -1218,6 +1218,8 @@ uint32_t ble_connect(uint8_t *addr) {
     // Stop scanning.
     nrf_ble_scan_stop();
 
+    sd_ble_gap_connect_cancel();
+
     // Establish connection.
     err_code = sd_ble_gap_connect(&gap_addr, &m_gap_scan_params, &m_gap_conn_params, APP_BLE_CONN_CFG_TAG);
     VERIFY_SUCCESS(err_code);
