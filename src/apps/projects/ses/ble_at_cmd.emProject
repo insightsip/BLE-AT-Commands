@@ -119,9 +119,6 @@
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/experimental_section_vars/nrf_section_iter.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/sortlist/nrf_sortlist.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/strerror/nrf_strerror.c" />
-      <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/uart/retarget.c">
-        <configuration Name="Debug" build_exclude_from_build="Yes" />
-      </file>
     </folder>
     <folder Name="nRF_Log">
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/log/src/nrf_log_backend_rtt.c" />
@@ -259,9 +256,6 @@
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/experimental_section_vars/nrf_section_iter.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/sortlist/nrf_sortlist.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/strerror/nrf_strerror.c" />
-      <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/uart/retarget.c">
-        <configuration Name="Debug" build_exclude_from_build="Yes" />
-      </file>
     </folder>
     <folder Name="nRF_Log">
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/log/src/nrf_log_backend_rtt.c" />
@@ -399,9 +393,6 @@
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/experimental_section_vars/nrf_section_iter.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/sortlist/nrf_sortlist.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/strerror/nrf_strerror.c" />
-      <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/uart/retarget.c">
-        <configuration Name="Debug" build_exclude_from_build="Yes" />
-      </file>
     </folder>
     <folder Name="nRF_Log">
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/libraries/log/src/nrf_log_backend_rtt.c" />
