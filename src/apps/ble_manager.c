@@ -74,7 +74,7 @@ NRF_BLE_QWR_DEF(m_qwr);                           /**< Context for the Queued Wr
 BLE_ADVERTISING_DEF(m_advertising);               /**< Advertising module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                  /**< Database discovery module instance. */
 BLE_NUS_C_DEF(m_ble_nus_c);                       /**< BLE Nordic UART Service (NUS) client instance. */
-BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT); /**< BLE NUS service instance. */
+BLE_NUS_DEF(m_ble_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT); /**< BLE NUS service instance. */
 NRF_BLE_SCAN_DEF(m_scan);                         /**< Scanning Module instance. */
 NRF_BLE_GQ_DEF(m_ble_gatt_queue,                  /**< BLE GATT Queue instance. */
     NRF_SDH_BLE_CENTRAL_LINK_COUNT,
@@ -113,7 +113,13 @@ static void ser_pkt_fw_event_handler(ser_pkt_fw_evt_t event) {
     }
 
     case SER_PKT_FW_EVT_RX_PKT_RECEIVED: {
-        ble_nus_data_send(&m_nus, event.evt_params.rx_pkt_received.p_buffer, &event.evt_params.rx_pkt_received.num_of_bytes, m_conn_handle);
+        uint16_t role = ble_conn_state_role(m_conn_handle);
+        if (role == BLE_GAP_ROLE_PERIPH) {
+            ble_nus_data_send(&m_ble_nus, event.evt_params.rx_pkt_received.p_buffer, &event.evt_params.rx_pkt_received.num_of_bytes, m_conn_handle);
+            }
+        else if (role == BLE_GAP_ROLE_CENTRAL) {
+            ble_nus_c_string_send(&m_ble_nus_c, event.evt_params.rx_pkt_received.p_buffer, event.evt_params.rx_pkt_received.num_of_bytes);
+        }
         break;
     }
 
@@ -715,7 +721,7 @@ static void nrf_qwr_error_handler(uint32_t nrf_error) {
  *
  * @param[in] p_evt       Nordic UART Service event.
  */
-static void nus_data_handler(ble_nus_evt_t *p_evt) {
+static void ble_nus_data_evt_handler(ble_nus_evt_t *p_evt) {
     if (p_evt->type == BLE_NUS_EVT_RX_DATA) {
         uint32_t err_code;
 
@@ -763,8 +769,12 @@ static void ble_nus_c_evt_handler(ble_nus_c_t *p_ble_nus_c, ble_nus_c_evt_t cons
         break;
 
     case BLE_NUS_C_EVT_NUS_TX_EVT:
-        // TODO implement
-        //  ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
+         err_code = ser_pkt_fw_tx_send(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len, SER_PKT_FW_PORT_BLE);
+
+        if (p_ble_nus_evt->p_data[p_ble_nus_evt->data_len - 1] == '\r') {
+            while (ser_pkt_fw_tx_send("\n", 1, SER_PKT_FW_PORT_BLE) == NRF_ERROR_BUSY)
+                ;
+        }
         break;
 
     case BLE_NUS_C_EVT_DISCONNECTED:
@@ -790,9 +800,9 @@ static uint32_t services_init(void) {
 
     // Initialize NUS.
     memset(&nus_init, 0, sizeof(nus_init));
-    nus_init.data_handler = nus_data_handler;
+    nus_init.data_handler = ble_nus_data_evt_handler;
 
-    err_code = ble_nus_init(&m_nus, &nus_init);
+    err_code = ble_nus_init(&m_ble_nus, &nus_init);
     VERIFY_SUCCESS(err_code);
 
 #if defined(BLE_CAP_CENTRAL)
