@@ -226,4 +226,6 @@ uint32_t ble_manager_scan(uint8_t start);
 
 uint32_t ble_manager_scan_list(device_info_t *list, uint8_t *nb_devices_found);
 
+uint32_t ble_manager_connect(uint8_t *addr);
+
 #endif

@@ -63,9 +63,11 @@
 #define APP_BLE_OBSERVER_PRIO 3                              /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 #define APP_ADV_INTERVAL 500                                 /**< The advertising interval (in ms). */
 #define APP_ADV_DURATION 0                                   /**< The advertising duration in units of 10 milliseconds. */
+#define APP_SCAN_SCAN_INTERVAL 160
+#define APP_SCAN_SCAN_WINDOW 80
+#define APP_SCAN_SCAN_DURATION 0
 #define NUS_SERVICE_UUID_TYPE BLE_UUID_TYPE_VENDOR_BEGIN     /**< UUID type for the Nordic UART Service (vendor specific). */
-#define NRF_BLE_GQ_QUEUE_SIZE 8 /**< Queue size for BLE GATT Queue module. */
-
+#define NRF_BLE_GQ_QUEUE_SIZE 8                              /**< Queue size for BLE GATT Queue module. */
 
 NRF_BLE_GATT_DEF(m_gatt);                         /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                           /**< Context for the Queued Write module.*/
@@ -97,6 +99,7 @@ static ble_gap_phys_t m_phys = {0, 0};                       /**< Current phys. 
 static uint8_t m_device_name[26] = DEVICE_NAME;              /**< Current device name. */
 static uint16_t m_adv_interval = APP_ADV_INTERVAL;           /**< Current advertising interval (in ms). */
 static ble_gap_conn_params_t m_gap_conn_params;              /**< Current connection parameters */
+static ble_gap_scan_params_t m_gap_scan_params;              /**< Current scan parameters */
 static ble_manager_state_t m_state = BLE_MANAGER_STATE_INIT; /**< Current state */
 
 /**@brief A function for processing the HAL Transport layer events.
@@ -613,7 +616,7 @@ static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
             // update device name
             if (length != 0) {
                 memcpy(found_devices[index].name, &p_adv_report->data.p_data[offset], length);
-                found_devices[index].name_length = strlen(found_devices[index].name) - 1; //remove \r
+                found_devices[index].name_length = strlen(found_devices[index].name) - 1; // remove \r
             }
         }
     } break;
@@ -668,10 +671,18 @@ static uint32_t scan_init(void) {
     ret_code_t err_code;
     nrf_ble_scan_init_t init_scan;
 
-    memset(&init_scan, 0, sizeof(init_scan));
+    // Set the default scan parameters.
+    m_gap_scan_params.active        = 1;
+    m_gap_scan_params.interval      = APP_SCAN_SCAN_INTERVAL;
+    m_gap_scan_params.window        = APP_SCAN_SCAN_WINDOW;
+    m_gap_scan_params.timeout       = APP_SCAN_SCAN_DURATION;
+    m_gap_scan_params.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
+    m_gap_scan_params.scan_phys     = BLE_GAP_PHY_1MBPS;
 
+    memset(&init_scan, 0, sizeof(init_scan));
     init_scan.connect_if_match = false;
     init_scan.conn_cfg_tag = APP_BLE_CONN_CFG_TAG;
+    init_scan.p_scan_param = &m_gap_scan_params;  
 
     err_code = nrf_ble_scan_init(&m_scan, &init_scan, scan_evt_handler);
     VERIFY_SUCCESS(err_code);
@@ -1166,16 +1177,34 @@ uint32_t ble_manager_scan(uint8_t start) {
     } else {
         scan_stop();
     }
+
+    return NRF_SUCCESS;
 }
 
 uint32_t ble_manager_scan_list(device_info_t *list, uint8_t *nb_devices_found) {
-    uint32_t err_code;    
+    uint32_t err_code;
 
     *nb_devices_found = devices_list_index;
 
-    for(int i=0; i<devices_list_index; i++) {
+    for (int i = 0; i < devices_list_index; i++) {
         list[i] = found_devices[i];
     }
+
+    return NRF_SUCCESS;
+}
+
+uint32_t ble_manager_connect(uint8_t *addr) {
+    uint32_t err_code;
+    ble_gap_addr_t gap_addr;
+    memcpy(gap_addr.addr, addr, BLE_GAP_ADDR_LEN);
+    gap_addr.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_STATIC; //only support BLE_GAP_ADDR_TYPE_RANDOM_STATIC
+
+    // Stop scanning.
+    nrf_ble_scan_stop();
+
+    // Establish connection.
+    err_code = sd_ble_gap_connect(&gap_addr, &m_gap_scan_params, &m_gap_conn_params, APP_BLE_CONN_CFG_TAG);
+    VERIFY_SUCCESS(err_code);
 
     return NRF_SUCCESS;
 }
