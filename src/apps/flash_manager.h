@@ -27,6 +27,7 @@
  */
 typedef struct
 {
+    uint8_t role;
     uint8_t dcdc_mode;
     int8_t txp;
     ble_gap_phys_t phys;
