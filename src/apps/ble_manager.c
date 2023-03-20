@@ -64,16 +64,8 @@
 #define APP_ADV_INTERVAL 500                                 /**< The advertising interval (in ms). */
 #define APP_ADV_DURATION 0                                   /**< The advertising duration in units of 10 milliseconds. */
 #define NUS_SERVICE_UUID_TYPE BLE_UUID_TYPE_VENDOR_BEGIN     /**< UUID type for the Nordic UART Service (vendor specific). */
-#define DEVICE_LIST_LENGTH 10
 #define NRF_BLE_GQ_QUEUE_SIZE 8 /**< Queue size for BLE GATT Queue module. */
 
-typedef struct
-{
-    ble_gap_addr_t gap_addr;
-    uint8_t name[21];
-    uint8_t name_length;
-    int8_t rssi;
-} device_info_t;
 
 NRF_BLE_GATT_DEF(m_gatt);                         /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                           /**< Context for the Queued Write module.*/
@@ -96,7 +88,8 @@ static ble_uuid_t const m_nus_uuid =
         .type = NUS_SERVICE_UUID_TYPE};
 
 static ble_uuid_t m_adv_uuids[] = {m_nus_uuid}; /**< Universally unique service identifier. */
-static device_info_t found_devices[DEVICE_LIST_LENGTH];
+static uint8_t devices_list_index = 0;
+static device_info_t found_devices[MAX_SCAN_DEVICE_LIST];
 
 static uint8_t m_dcdc_mode = 0;                              /**< Current DCDC mode. */
 static int8_t m_txp = 0;                                     /**< Current txp. */
@@ -132,7 +125,7 @@ static void ser_pkt_fw_event_handler(ser_pkt_fw_evt_t event) {
     }
     }
 }
-static uint8_t devices_list_index = 0;
+
 uint8_t get_devices_list_id(ble_gap_addr_t gap_addr) {
     uint8_t device_index = 0;
 
@@ -579,6 +572,10 @@ static uint32_t db_discovery_init(void) {
 static uint32_t scan_start(void) {
     ret_code_t ret;
 
+    // reset device list
+    memset(found_devices, 0, sizeof(found_devices));
+    devices_list_index = 0;
+
     ret = nrf_ble_scan_start(&m_scan);
     VERIFY_SUCCESS(ret);
 
@@ -603,6 +600,9 @@ static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
         uint16_t offset = 0;
         uint16_t length = 0;
         ble_gap_evt_adv_report_t const *p_adv_report = p_scan_evt->params.p_not_found;
+
+        // Check if device already be found with NRF_BLE_SCAN_EVT_FILTER_MATCH
+        // Here we just want to update the device name as it is not found using NRF_BLE_SCAN_EVT_FILTER_MATCH
         index = get_devices_list_id(p_adv_report->peer_addr);
         if (index != 0xFF) {
             length = ble_advdata_search(p_adv_report->data.p_data, p_adv_report->data.len, &offset, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME);
@@ -610,8 +610,10 @@ static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
                 // Look for the short local name if it was not found as complete.
                 length = ble_advdata_search(p_adv_report->data.p_data, p_adv_report->data.len, &offset, BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME);
             }
+            // update device name
             if (length != 0) {
                 memcpy(found_devices[index].name, &p_adv_report->data.p_data[offset], length);
+                found_devices[index].name_length = strlen(found_devices[index].name) - 1; //remove \r
             }
         }
     } break;
@@ -1164,4 +1166,16 @@ uint32_t ble_manager_scan(uint8_t start) {
     } else {
         scan_stop();
     }
+}
+
+uint32_t ble_manager_scan_list(device_info_t *list, uint8_t *nb_devices_found) {
+    uint32_t err_code;    
+
+    *nb_devices_found = devices_list_index;
+
+    for(int i=0; i<devices_list_index; i++) {
+        list[i] = found_devices[i];
+    }
+
+    return NRF_SUCCESS;
 }

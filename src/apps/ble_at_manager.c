@@ -755,7 +755,7 @@ at_error_code_t at_scan_start_set(const uint8_t *param) {
     uint32_t err_code;
     at_error_code_t at_err_code;
 
-    // Check that role is Peripheral
+    // Check that role is Central
     if (m_current_role != BLE_CENTRAL) {
         return AT_ERROR_FORBIDDEN;
     }
@@ -772,7 +772,7 @@ at_error_code_t at_scan_stop_set(const uint8_t *param) {
     uint32_t err_code;
     at_error_code_t at_err_code;
 
-    // Check that role is Peripheral
+    // Check that role is Central
     if (m_current_role != BLE_CENTRAL) {
         return AT_ERROR_FORBIDDEN;
     }
@@ -781,6 +781,37 @@ at_error_code_t at_scan_stop_set(const uint8_t *param) {
     err_code = ble_manager_scan(BLE_SCAN_STOP);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
+
+    return AT_OK;
+}
+
+at_error_code_t at_scan_list_read(const uint8_t *param) {
+    uint32_t err_code;
+    at_error_code_t at_err_code;
+    device_info_t scan_list[MAX_SCAN_DEVICE_LIST];
+    uint8_t nb_device_found;
+    uint8_t addr[BLE_GAP_ADDR_LEN];
+    uint8_t name[26];
+
+    // Check that role is Central
+    if (m_current_role != BLE_CENTRAL) {
+        return AT_ERROR_FORBIDDEN;
+    }
+
+    // Read value
+    err_code = ble_manager_scan_list(scan_list, &nb_device_found);
+    CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
+    AT_VERIFY_SUCCESS(at_err_code);
+
+    // Send response
+    for (int i=0; i<nb_device_found; i++) {
+        memset(name, 0, 26);
+        strncpy(name, scan_list[i].name, scan_list[i].name_length);
+        memcpy(addr, scan_list[i].gap_addr.addr, BLE_GAP_ADDR_LEN);
+        
+        sprintf(m_tx_buffer, "%s: %d %s %x%x%x%x%x%x\r\n", AT_BLE_SCANLIST, scan_list[i].rssi, name, addr[0],addr[1],addr[2],addr[3],addr[4],addr[5]);
+        ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
+    }
 
     return AT_OK;
 }
@@ -812,7 +843,7 @@ static at_command_t at_commands[] =
 #if defined(BLE_CAP_CENTRAL)
         AT_COMMAND_DEF(AT_BLE_SCANSTART, at_scan_start_set, at_error_not_supported, at_error_supported),
         AT_COMMAND_DEF(AT_BLE_SCANSTOP, at_scan_stop_set, at_error_not_supported, at_error_supported),
-        AT_COMMAND_DEF(AT_BLE_SCANLIST, at_error_not_supported, at_error_not_supported, at_error_supported),
+        AT_COMMAND_DEF(AT_BLE_SCANLIST, at_error_not_supported, at_scan_list_read, at_error_supported),
         AT_COMMAND_DEF(AT_BLE_CONNECT, at_error_not_supported, at_error_not_supported, at_error_supported),
 #endif // defined(BLE_CAP_CENTRAL)
 };

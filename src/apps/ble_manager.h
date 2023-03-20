@@ -22,6 +22,7 @@
 #define BLE_MANAGER_H__
 
 #include <stdint.h>
+#include "nrf_ble_scan.h"
 
 #define SER_PKT_FW_PORT_BLE 1
 
@@ -36,6 +37,17 @@ typedef enum
     BLE_MANAGER_STATE_MAX
 } ble_manager_state_t;
 
+/**@brief Structure containing scan result
+ */
+typedef struct
+{
+    ble_gap_addr_t gap_addr;
+    uint8_t name[26];
+    uint8_t name_length;
+    int8_t rssi;
+} device_info_t;
+
+#define MAX_SCAN_DEVICE_LIST 10
 #define BLE_ADV_START   1
 #define BLE_ADV_STOP    0
 #define BLE_SCAN_START   1
@@ -211,5 +223,7 @@ uint32_t ble_manager_restore(void);
  * @retval NRF_SUCCESS              Operation success.
  */
 uint32_t ble_manager_scan(uint8_t start);
+
+uint32_t ble_manager_scan_list(device_info_t *list, uint8_t *nb_devices_found);
 
 #endif
