@@ -574,7 +574,7 @@ at_error_code_t at_role_set(const uint8_t *param) {
         ble_manager_advertise(BLE_ADV_STOP);
     }
     if (conn_state == 0 && m_current_role == BLE_CENTRAL) {
-        // TODO stop scan
+        ble_manager_scan(BLE_SCAN_STOP);
     }
 
     m_current_role = new_role;
@@ -830,7 +830,6 @@ at_error_code_t at_connect_set(const uint8_t *param) {
     if (sscanf(param, "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx", &addr[0], &addr[1], &addr[2], &addr[3], &addr[4], &addr[5]) != 6) {
         return AT_ERROR_INVALID_PARAM;
     }
-
 
     // Run command
     err_code = ble_manager_connect(addr);
