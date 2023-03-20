@@ -30,6 +30,7 @@
 #include "ser_pkt_fw.h"
 #include <stdbool.h>
 #include <string.h>
+#include "version.h"
 
 /**
  * @brief Macro for creating a new AT Command
