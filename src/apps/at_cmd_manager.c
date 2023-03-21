@@ -1,5 +1,5 @@
 /******************************************************************************
- * @file    ble_at_manager.c
+ * @file    at_cmd_manager.c
  * @author  Insight SiP
  * @brief  at commands for BLE
  *
@@ -18,7 +18,7 @@
  *
  *****************************************************************************/
 
-#include "ble_at_manager.h"
+#include "at_cmd_manager.h"
 #include "app_error.h"
 #include "ble_manager.h"
 #include "boards.h"
@@ -854,7 +854,7 @@ static void ser_pkt_fw_event_handler(ser_pkt_fw_evt_t event) {
     case SER_PKT_FW_EVT_RX_PKT_RECEIVED: {
         memcpy(m_rx_at_command, event.evt_params.rx_pkt_received.p_buffer, event.evt_params.rx_pkt_received.num_of_bytes);
         m_at_command_ready = true;
-        ble_at_manager_execute();
+        at_cmd_manager_execute();
         break;
     }
 
@@ -871,7 +871,7 @@ static void ser_pkt_fw_event_handler(ser_pkt_fw_evt_t event) {
     }
 }
 
-void ble_at_manager_execute() {
+void at_cmd_manager_execute() {
     at_ret_code_t at_err_code;
     at_command_t *current_at_command;
     uint8_t *p_data;
@@ -929,7 +929,7 @@ void ble_at_manager_execute() {
     }
 }
 
-ret_code_t ble_at_manager_init() {
+ret_code_t at_cmd_manager_init() {
     uint32_t err_code;
     flash_manager_ble_cfg_t *flash;
     ble_init_cfg_t ble_init_cfg;

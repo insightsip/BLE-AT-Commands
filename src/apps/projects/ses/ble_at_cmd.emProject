@@ -318,7 +318,7 @@
       Name="Debug"
       linker_scanf_character_group_matching_enabled="No" />
     <folder Name="Application">
-      <file file_name="../../ble_at_manager.c" />
+      <file file_name="../../at_cmd_manager.c" />
       <file file_name="../../ble_manager.c" />
       <file file_name="../../flash_manager.c" />
       <file file_name="../../main.c" />

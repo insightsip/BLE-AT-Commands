@@ -79,7 +79,7 @@ typedef enum {
 #define DCDC_ON 1
 #define DCDC_OFF 0
 
-uint32_t ble_at_manager_init();
-void ble_at_manager_execute();
+uint32_t at_cmd_manager_init();
+void at_cmd_manager_execute();
 
 #endif

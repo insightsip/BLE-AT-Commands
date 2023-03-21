@@ -20,7 +20,7 @@
 
 #include "app_timer.h"
 #include "app_util_platform.h"
-#include "ble_at_manager.h"
+#include "at_cmd_manager.h"
 #include "ble_hci.h"
 #include "nordic_common.h"
 #include "nrf.h"
@@ -120,7 +120,7 @@ int main(void) {
     app_timer_start(m_app_reset_timer_id, APP_TIMER_TICKS(1000), NULL);
 
     // Initialize AT commands manager
-    err_code = ble_at_manager_init();
+    err_code = at_cmd_manager_init();
     APP_ERROR_CHECK(err_code);
 
     // Start execution.
