@@ -74,6 +74,10 @@ typedef enum {
 
 #define BLE_PERIPHERAL 0
 #define BLE_CENTRAL 1
+#define ECHO_ON 1
+#define ECHO_OFF 0
+#define DCDC_ON 1
+#define DCDC_OFF 0
 
 uint32_t ble_at_manager_init();
 void ble_at_manager_execute();

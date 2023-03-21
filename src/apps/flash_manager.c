@@ -41,6 +41,7 @@
 #define SLAVE_LATENCY 0
 #define CONN_SUP_TIMEOUT 4000
 #define DEFAULT_NAME "ISP_BLE_UART"
+#define DEFAULT_NAME_LEN 12
 #define DEFAULT_ADVINT 300
 
 /**@brief Array to map FDS events to strings. */
@@ -99,6 +100,7 @@ static flash_manager_ble_cfg_t m_ble_cfg =
         .phys.rx_phys = DEFAULT_PHYS_RX,
         .phys.tx_phys = DEFAULT_PHYS_TX,
         .name = DEFAULT_NAME,
+        .name_length = DEFAULT_NAME_LEN,
         .advparam = DEFAULT_ADVINT,
         .gap_conn_params.min_conn_interval = MSEC_TO_UNITS(MIN_CONN_INTERVAL, UNIT_1_25_MS),
         .gap_conn_params.max_conn_interval = MSEC_TO_UNITS(MAX_CONN_INTERVAL, UNIT_1_25_MS),
@@ -264,7 +266,8 @@ uint32_t flash_manager_ble_cfg_restore(void) {
     m_ble_cfg.txp = DEFAULT_TXP;
     m_ble_cfg.phys.rx_phys = DEFAULT_PHYS_RX,
     m_ble_cfg.phys.tx_phys = DEFAULT_PHYS_TX,
-    strncpy(m_ble_cfg.name, DEFAULT_NAME, sizeof(m_ble_cfg.name));
+    m_ble_cfg.name_length = DEFAULT_NAME_LEN;
+    strncpy(m_ble_cfg.name, DEFAULT_NAME, m_ble_cfg.name_length);
     m_ble_cfg.advparam = DEFAULT_ADVINT;
     m_ble_cfg.gap_conn_params.min_conn_interval = MSEC_TO_UNITS(MIN_CONN_INTERVAL, UNIT_1_25_MS);
     m_ble_cfg.gap_conn_params.max_conn_interval = MSEC_TO_UNITS(MAX_CONN_INTERVAL, UNIT_1_25_MS);

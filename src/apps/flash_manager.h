@@ -32,6 +32,7 @@ typedef struct
     int8_t txp;
     ble_gap_phys_t phys;
     uint8_t name[26];
+    uint16_t name_length;
     uint16_t advparam;
     ble_gap_conn_params_t gap_conn_params;
 }flash_manager_ble_cfg_t;

@@ -52,6 +52,21 @@ typedef struct
 #define BLE_SCAN_START 1
 #define BLE_SCAN_STOP 0
 
+/**@brief Structure defining the init BLE configuration data.
+ */
+typedef struct
+{
+    uint8_t role;
+    uint8_t dcdc_mode;
+    int8_t txp;
+    ble_gap_phys_t phys;
+    uint16_t name_length;
+    uint8_t name[31];
+    uint16_t advparam;
+    ble_gap_conn_params_t gap_conn_params;
+}ble_init_cfg_t;
+
+
 /**@brief BLE manage event types. */
 typedef enum {
     BLE_MANAGER_EVT_PHY_CHANGED = 0,     /**< PHY changed event */
@@ -67,11 +82,12 @@ typedef struct
 {
     ble_manager_evt_type_t evt_type; /**< Type of event. */
 
-    //  union  /**< Union alternative identified by evt_type in enclosing struct. */
-    //  {
-    //      ser_phy_evt_rx_pkt_received_params_t rx_pkt_received;
+      union  /**< Union alternative identified by evt_type in enclosing struct. */
+      {
+          ble_gap_phys_t phy;
+          ble_gap_conn_params_t conn_params;
     //      ser_phy_evt_hw_error_params_t        hw_error;
-    //  } evt_params;
+      } evt_params;
 } ble_manager_evt_t;
 
 /**@brief Callback function handler for the BLE manager.
@@ -82,7 +98,7 @@ typedef void (*ble_manager_evt_handler_t)(ble_manager_evt_t evt);
 
 /**@brief Function for opening and initializing the BLE manager.
  */
-uint32_t ble_manager_init(ble_manager_evt_handler_t evt_handler);
+uint32_t ble_manager_init(ble_init_cfg_t init_cfg, ble_manager_evt_handler_t evt_handler);
 
 /**@brief Function for getting the connection state.
  *
@@ -101,14 +117,6 @@ uint32_t ble_connection_state_get(uint8_t *state);
  */
 uint32_t ble_dcdc_set(uint8_t mode);
 
-/**@brief Function for getting the DCDC mode.
- *
- * @param[out] mode                 DCDC enabled or disabled
- *
- * @retval NRF_SUCCESS              Operation success.
- */
-uint32_t ble_dcdc_get(uint8_t *mode);
-
 /**@brief Function for setting the transmit power.
  *
  * @param[in] power                  power in dBm
@@ -117,14 +125,6 @@ uint32_t ble_dcdc_get(uint8_t *mode);
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
 uint32_t ble_txp_set(int8_t txp);
-
-/**@brief Function for getting the transmit power.
- *
- * @param[out] power                power in dBm
- *
- * @retval NRF_SUCCESS              Operation success.
- */
-uint32_t ble_txp_get(int8_t *txp);
 
 /**@brief Function for setting the phy.
  *
@@ -136,15 +136,6 @@ uint32_t ble_txp_get(int8_t *txp);
  */
 uint32_t ble_phy_set(uint8_t phy_tx, uint8_t phy_rx);
 
-/**@brief Function for getting the phy.
- *
- * @param[out] phy_tx                 TX PHY slection, 0:Auto, 1:1Mbps, 2:2Mbps, 4:coded
- * @param[out] phy_rx                 RX PHY slection, 0:Auto, 1:1Mbps, 2:2Mbps, 4:coded
- *
- * @retval NRF_SUCCESS              Operation success.
- */
-uint32_t ble_phy_get(uint8_t *phy_tx, uint8_t *phy_rx);
-
 /**@brief Function for setting the advertising parameters.
  *
  * @param[in] interval              Interval in ms
@@ -153,14 +144,6 @@ uint32_t ble_phy_get(uint8_t *phy_tx, uint8_t *phy_rx);
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
 uint32_t ble_advparam_set(uint16_t interval);
-
-/**@brief Function for getting the advertising parameters.
- *
- * @param[out] interval              Interval in ms
- *
- * @retval NRF_SUCCESS              Operation success.
- */
-uint32_t ble_advparam_get(uint16_t *interval);
 
 /**@brief Function for setting the connection parameters.
  *
@@ -174,33 +157,24 @@ uint32_t ble_advparam_get(uint16_t *interval);
  */
 uint32_t ble_connparam_set(float conn_interval_min, float conn_interval_max, uint16_t conn_latency, uint16_t conn_timeout);
 
-/**@brief Function for getting the advertising parameters.
- *
- * @param[out] conn_interval_min     Interval min in ms
- * @param[out] conn_interval_max     Interval max in ms
- * @param[out] conn_latency          Slave latency
- * @param[out] conn_timeout          timeout in ms
- *
- * @retval NRF_SUCCESS              Operation success.
- */
-uint32_t ble_connparam_get(float *conn_interval_min, float *conn_interval_max, uint16_t *conn_latency, uint16_t *conn_timeout);
-
 /**@brief Function for setting the device name.
  *
  * @param[in] name                  pointer to device name
+ * @param[in] length                device name length
  *
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
-uint32_t ble_name_set(uint8_t *name);
+uint32_t ble_name_set(uint8_t *name, uint16_t length);
 
 /**@brief Function for getting the advertising parameters.
  *
  * @param[out] name                 pointer to device name
+ * @param[out] length               pointer to device length
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_name_get(uint8_t *name);
+uint32_t ble_name_get(uint8_t *name, uint16_t *length);
 
 /**@brief Function for starting/stopping advertising.
  *

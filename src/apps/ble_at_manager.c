@@ -79,18 +79,19 @@ typedef struct
 } at_command_t;
 
 static bool m_at_command_ready = false;
-static uint8_t m_echo = 0;
 static uint8_t m_rx_at_command[128] = {0};
 static uint8_t m_tx_buffer[128] = {0};
 
-static uint8_t m_current_role = BLE_PERIPHERAL;
-static uint8_t m_dcdc_mode = 0;                              /**< Current DCDC mode. */
-static int8_t m_txp = 0;                                     /**< Current txp. */
-static ble_gap_phys_t m_phys = {0, 0};                       /**< Current phys. */
-static uint8_t m_device_name[26];                            /**< Current device name. */
-static uint16_t m_adv_interval;                              /**< Current advertising interval (in ms). */
-static ble_gap_conn_params_t m_gap_conn_params;              /**< Current connection parameters */
-static ble_gap_scan_params_t m_gap_scan_params;              /**< Current scan parameters */
+static uint8_t m_echo = ECHO_OFF;
+static uint8_t m_current_role = BLE_PERIPHERAL; /**< Current Role. */
+static uint8_t m_dcdc_mode = DCDC_OFF;          /**< Current DCDC mode. */
+static int8_t m_txp = 0;                        /**< Current txp. */
+static ble_gap_phys_t m_phys = {0, 0};          /**< Current phys. */
+static uint8_t m_device_name[31];               /**< Current device name. */
+static uint16_t m_device_name_len;              /**< Current device name length. */
+static uint16_t m_adv_interval;                 /**< Current advertising interval (in ms). */
+static ble_gap_conn_params_t m_gap_conn_params; /**< Current connection parameters */
+static ble_gap_scan_params_t m_gap_scan_params; /**< Current scan parameters */
 
 /**
  * @brief  Array corresponding to the description of each possible AT Error
@@ -115,15 +116,49 @@ static const uint8_t *at_error_description[] =
         "ERROR\r\n",                /* AT_MAX */
 };
 
+/**@brief Function for updating new configuration in the flash.
+ *
+ */
+static void update_flash(void) {
+    flash_manager_ble_cfg_t flash;
+
+    flash.dcdc_mode = m_dcdc_mode;
+    flash.advparam = m_adv_interval;
+    flash.gap_conn_params = m_gap_conn_params;
+    flash.name_length = m_device_name_len;
+    memcpy(flash.name, m_device_name, sizeof(m_device_name));
+    flash.phys = m_phys;
+    flash.txp = m_txp;
+    flash_manager_ble_cfg_store(&flash);
+}
+
 /**
  * @brief A callback function to be used to handleBLE manager events.
  */
 static void ble_manager_evt_handler(ble_manager_evt_t evt) {
     switch (evt.evt_type) {
     case BLE_MANAGER_EVT_PHY_CHANGED:
+        // Update flash if value changed
+        if ((m_phys.tx_phys != evt.evt_params.phy.tx_phys) || (m_phys.rx_phys != evt.evt_params.phy.rx_phys)) {
+            m_phys.tx_phys = evt.evt_params.phy.rx_phys;
+            m_phys.rx_phys = evt.evt_params.phy.rx_phys;
+            update_flash();
+        }
         break;
 
     case BLE_MANAGER_EVT_CONN_PARAMS_CHANGED:
+        // Update flash if value changed
+        if ((m_gap_conn_params.conn_sup_timeout != evt.evt_params.conn_params.conn_sup_timeout) ||
+            (m_gap_conn_params.max_conn_interval != evt.evt_params.conn_params.max_conn_interval) ||
+            (m_gap_conn_params.min_conn_interval != evt.evt_params.conn_params.min_conn_interval) ||
+            (m_gap_conn_params.slave_latency != evt.evt_params.conn_params.slave_latency)) {
+            m_gap_conn_params.conn_sup_timeout = evt.evt_params.conn_params.conn_sup_timeout;
+            m_gap_conn_params.max_conn_interval = evt.evt_params.conn_params.max_conn_interval;
+            m_gap_conn_params.min_conn_interval = evt.evt_params.conn_params.min_conn_interval;
+            m_gap_conn_params.slave_latency = evt.evt_params.conn_params.slave_latency;
+
+            update_flash();
+        }
         break;
     }
 }
@@ -162,7 +197,6 @@ static at_ret_code_t at_echo_set(const uint8_t *param) {
 }
 
 at_ret_code_t at_echo_read(const uint8_t *param) {
-    // Send response
     sprintf(m_tx_buffer, "%s: %u\r\n", AT_ECHO, m_echo);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
@@ -229,37 +263,28 @@ at_ret_code_t at_dcdc_set(const uint8_t *param) {
 
     dcdc_mode = (uint8_t)dcdc_mode;
 
-    if (dcdc_mode > 1) {
-        return AT_ERROR_INVALID_PARAM;
-    }
-
     // Run command
     err_code = ble_dcdc_set(dcdc_mode);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
+    // Update flash if dcdc_mode changed
+    if (m_dcdc_mode != dcdc_mode) {
+        m_dcdc_mode = dcdc_mode;
+        update_flash();
+    }
+
     return AT_OK;
 }
 
 at_ret_code_t at_dcdc_read(const uint8_t *param) {
-    uint32_t err_code;
-    at_ret_code_t at_err_code;
-    uint8_t dcdc_mode;
-
-    // Read value
-    err_code = ble_dcdc_get(&dcdc_mode);
-    CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
-    AT_VERIFY_SUCCESS(at_err_code);
-
-    // Send response
-    sprintf(m_tx_buffer, "%s: %u\r\n", AT_DCDC, dcdc_mode);
+    sprintf(m_tx_buffer, "%s: %u\r\n", AT_DCDC, m_dcdc_mode);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
 }
 
 at_ret_code_t at_dcdc_test(const uint8_t *param) {
-    // Send response
     sprintf(m_tx_buffer, "%s: (0,1)\r\n", AT_DCDC);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
@@ -267,7 +292,6 @@ at_ret_code_t at_dcdc_test(const uint8_t *param) {
 }
 
 at_ret_code_t at_version_read(const uint8_t *param) {
-    // Send response
     sprintf(m_tx_buffer, "%s: %s\r\n", AT_VERSION, FW_REVISION);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
@@ -289,21 +313,17 @@ at_ret_code_t at_txp_set(const uint8_t *param) {
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
+    // Update flash if value changed
+    if (m_txp != txp) {
+        m_txp = txp;
+        update_flash();
+    }
+
     return AT_OK;
 }
 
 at_ret_code_t at_txp_read(const uint8_t *param) {
-    uint32_t err_code;
-    at_ret_code_t at_err_code;
-    int8_t txp;
-
-    // Read value
-    err_code = ble_txp_get(&txp);
-    CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
-    AT_VERIFY_SUCCESS(at_err_code);
-
-    // send response
-    sprintf(m_tx_buffer, "%s: %d\r\n", AT_BLE_TXP, txp);
+    sprintf(m_tx_buffer, "%s: %d\r\n", AT_BLE_TXP, m_txp);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
@@ -336,21 +356,13 @@ at_ret_code_t at_phy_set(const uint8_t *param) {
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
+    // m_phy will be updated in callback
+
     return AT_OK;
 }
 
 at_ret_code_t at_phy_read(const uint8_t *param) {
-    uint32_t err_code;
-    at_ret_code_t at_err_code;
-    uint8_t phy_tx, phy_rx;
-
-    // Read value
-    err_code = ble_phy_get(&phy_tx, &phy_rx);
-    CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
-    AT_VERIFY_SUCCESS(at_err_code);
-
-    // send response
-    sprintf(m_tx_buffer, "%s: %u,%u\r\n", AT_BLE_PHY, phy_tx, phy_rx);
+    sprintf(m_tx_buffer, "%s: %u,%u\r\n", AT_BLE_PHY, m_phys.tx_phys, m_phys.rx_phys);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
@@ -392,24 +404,17 @@ at_ret_code_t at_connparam_set(const uint8_t *param) {
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
+    // m_gap_conn_params will be updated in callback
+
     return AT_OK;
 }
 
 at_ret_code_t at_connparam_read(const uint8_t *param) {
-    uint32_t err_code;
-    at_ret_code_t at_err_code;
-    float interval_min;
-    float interval_max;
-    uint16_t latency;
-    uint16_t timeout;
-
-    // Read value
-    err_code = ble_connparam_get(&interval_min, &interval_max, &latency, &timeout);
-    CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
-    AT_VERIFY_SUCCESS(at_err_code);
-
-    // send response
-    sprintf(m_tx_buffer, "%s: %.2f,%.2f,%u,%u\r\n", AT_BLE_CONNPARAM, interval_min, interval_max, latency, timeout);
+    sprintf(m_tx_buffer, "%s: %.2f,%.2f,%u,%u\r\n", AT_BLE_CONNPARAM,
+        m_gap_conn_params.min_conn_interval,
+        m_gap_conn_params.max_conn_interval,
+        m_gap_conn_params.slave_latency,
+        m_gap_conn_params.conn_sup_timeout);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
@@ -418,26 +423,6 @@ at_ret_code_t at_connparam_read(const uint8_t *param) {
 at_ret_code_t at_connparam_test(const uint8_t *param) {
     sprintf(m_tx_buffer, "%s: (7.5-4000),(7.5-4000),(0-500),(10-32000)\r\n", AT_BLE_CONNPARAM);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
-
-    return AT_OK;
-}
-
-at_ret_code_t at_addr_set(const uint8_t *param) {
-    uint32_t err_code;
-    at_ret_code_t at_err_code;
-    uint8_t devaddr[6];
-
-    // Check parameters
-    //    if (sscanf(param, "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
-    //             &devaddr[0], &devaddr[1], &devaddr[2], &devaddr[3], &devaddr[4], &devaddr[5]) != 6)
-    //    {
-    //        return AT_ERROR_INVALID_PARAM;
-    //    }
-
-    // Run command
-    //    err_code = ble_manager_addr_set(devaddr);
-    //    CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
-    //    AT_VERIFY_SUCCESS(at_err_code);
 
     return AT_OK;
 }
@@ -454,13 +439,6 @@ at_ret_code_t at_addr_read(const uint8_t *param) {
     sprintf(m_tx_buffer, "%s: %02X-%02X-%02X-%02X-%02X-%02X\r\n",
         AT_BLE_ADDR, devaddr[0], devaddr[1], devaddr[2], devaddr[3], devaddr[4], devaddr[5]);
 
-    ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
-
-    return AT_OK;
-}
-
-at_ret_code_t at_addr_test(const uint8_t *param) {
-    sprintf(m_tx_buffer, "%s: hh-hh-hh-hh-hh-hh\r\n", AT_BLE_ADDR);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
@@ -581,12 +559,6 @@ at_ret_code_t at_role_set(const uint8_t *param) {
 }
 
 at_ret_code_t at_role_read(const uint8_t *param) {
-    uint32_t err_code;
-    at_ret_code_t at_err_code;
-    uint8_t flowcontrol;
-    uint32_t baudrate;
-
-    // send response
     sprintf(m_tx_buffer, "%s: %u\r\n", AT_BLE_ROLE, m_current_role);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
@@ -615,9 +587,21 @@ at_ret_code_t at_name_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_name_set(name);
+    err_code = ble_name_set(name, strlen(name) - 1);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
+
+    m_device_name_len = strlen(name) - 1;
+    memset(m_device_name, 0, sizeof(m_device_name));
+    strncpy(m_device_name, name, m_device_name_len);
+
+    // Update flash if value changed
+    if (strncmp(m_device_name, name, strlen(name) - 1) && (m_device_name_len != strlen(name) - 1)) {
+        strncpy(m_device_name, name, strlen(name) - 1);
+        m_device_name_len = strlen(name) - 1;
+
+        update_flash();
+    }
 
     return AT_OK;
 }
@@ -625,20 +609,12 @@ at_ret_code_t at_name_set(const uint8_t *param) {
 at_ret_code_t at_name_read(const uint8_t *param) {
     uint32_t err_code;
     at_ret_code_t at_err_code;
-    uint8_t name[31] = "";
 
-    // Check that role is Peripheral
-    if (m_current_role != BLE_PERIPHERAL) {
-        return AT_ERROR_FORBIDDEN;
-    }
-
-    // Read value
-    err_code = ble_name_get(name);
+    ble_name_get(m_device_name, &m_device_name_len);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
-    // send response
-    sprintf(m_tx_buffer, "%s: %s\r\n", AT_BLE_NAME, name);
+    sprintf(m_tx_buffer, "%s: %s\r\n", AT_BLE_NAME, m_device_name);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
@@ -664,26 +640,18 @@ at_ret_code_t at_advparam_set(const uint8_t *param) {
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
+    // Update flash if value changed
+    if (m_adv_interval != interval) {
+        m_adv_interval = interval;
+
+        update_flash();
+    }
+
     return AT_OK;
 }
 
 at_ret_code_t at_advparam_read(const uint8_t *param) {
-    uint32_t err_code;
-    at_ret_code_t at_err_code;
-    uint16_t interval;
-
-    // Check that role is Peripheral
-    if (m_current_role != BLE_PERIPHERAL) {
-        return AT_ERROR_FORBIDDEN;
-    }
-
-    // Read value
-    err_code = ble_advparam_get(&interval);
-    CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
-    AT_VERIFY_SUCCESS(at_err_code);
-
-    // send response
-    sprintf(m_tx_buffer, "%s: %u\r\n", AT_BLE_ADVPARAM, interval);
+    sprintf(m_tx_buffer, "%s: %u\r\n", AT_BLE_ADVPARAM, m_adv_interval);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
@@ -910,7 +878,7 @@ void ble_at_manager_execute() {
 
     if (m_at_command_ready) {
         // If enabled echo command
-        if (m_echo) {
+        if (m_echo == ECHO_ON) {
             sprintf(m_tx_buffer, "%s", m_rx_at_command);
             m_tx_buffer[strcspn(m_tx_buffer, "\r\n")] = 0;
             strcat(m_tx_buffer, "\r\n");
@@ -963,13 +931,36 @@ void ble_at_manager_execute() {
 
 ret_code_t ble_at_manager_init() {
     uint32_t err_code;
+    flash_manager_ble_cfg_t *flash;
+    ble_init_cfg_t ble_init_cfg;
 
     // Initialize flash manager
     err_code = flash_manager_init();
     VERIFY_SUCCESS(err_code);
 
+    // Load configuration from flash
+    err_code = flash_manager_ble_cfg_load(&flash);
+    VERIFY_SUCCESS(err_code);
+
+    // Apply configuration of the flash
+    m_dcdc_mode = flash->dcdc_mode;
+    m_txp = flash->txp;
+    m_phys = flash->phys;
+    m_device_name_len = flash->name_length;
+    memcpy(m_device_name, flash->name, sizeof(m_device_name));
+    m_adv_interval = flash->advparam;
+    m_gap_conn_params = flash->gap_conn_params;
+
     // Initialize BLE manager
-    err_code = ble_manager_init(ble_manager_evt_handler);
+    ble_init_cfg.dcdc_mode = m_dcdc_mode;
+    ble_init_cfg.txp = m_txp;
+    ble_init_cfg.phys = m_phys;
+    ble_init_cfg.name_length = m_device_name_len;
+    memcpy(ble_init_cfg.name, m_device_name, sizeof(m_device_name));
+    ble_init_cfg.advparam = m_adv_interval;
+    ble_init_cfg.gap_conn_params = m_gap_conn_params;
+
+    err_code = ble_manager_init(ble_init_cfg, ble_manager_evt_handler);
     VERIFY_SUCCESS(err_code);
 
     // Initialize serial packet fowarder
