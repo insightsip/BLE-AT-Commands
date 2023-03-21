@@ -87,15 +87,9 @@ static ble_uuid_t const m_nus_uuid =
 static ble_uuid_t m_adv_uuids[] = {m_nus_uuid}; /**< Universally unique service identifier. */
 static uint8_t devices_list_index = 0;
 static device_info_t found_devices[MAX_SCAN_DEVICE_LIST];
+static uint16_t m_adv_interval;                              /**< Current advertising interval (in ms). */
 
-static uint8_t m_dcdc_mode = 0;                              /**< Current DCDC mode. */
-static int8_t m_txp = 0;                                     /**< Current txp. */
-static ble_gap_phys_t m_phys = {0, 0};                       /**< Current phys. */
-static uint8_t m_device_name[31];                           /**< Current device name. */
-static uint16_t m_adv_interval;           /**< Current advertising interval (in ms). */
-static ble_gap_conn_params_t m_gap_conn_params;              /**< Current connection parameters */
 static ble_gap_scan_params_t m_gap_scan_params;              /**< Current scan parameters */
-static ble_manager_state_t m_state = BLE_MANAGER_STATE_INIT; /**< Current state */
 
 /**@brief A function for processing the HAL Transport layer events.
  *
@@ -154,16 +148,16 @@ uint8_t get_devices_list_id(ble_gap_addr_t gap_addr) {
  * @details This function will set up all the necessary GAP (Generic Access Profile) parameters of
  *          the device. It also sets the permissions and appearance.
  */
-static uint32_t gap_params_init(void) {
+static uint32_t gap_params_init(uint8_t *device_name, uint16_t device_name_length, ble_gap_conn_params_t conn_params) {
     uint32_t err_code;
     ble_gap_conn_sec_mode_t sec_mode;
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
-    err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)m_device_name, sizeof(m_device_name));
+    err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)device_name, device_name_length);
     VERIFY_SUCCESS(err_code);
 
-    err_code = sd_ble_gap_ppcp_set(&m_gap_conn_params);
+    err_code = sd_ble_gap_ppcp_set(&conn_params);
     VERIFY_SUCCESS(err_code);
 
     return NRF_SUCCESS;
@@ -199,12 +193,12 @@ static void on_conn_params_evt(ble_conn_params_evt_t *p_evt) {
 
 /**@brief Function for initializing the Connection Parameters module.
  */
-static uint32_t conn_params_init(void) {
+static uint32_t conn_params_init(ble_gap_conn_params_t conn_params) {
     uint32_t err_code;
     ble_conn_params_init_t cp_init;
 
     memset(&cp_init, 0, sizeof(cp_init));
-    cp_init.p_conn_params = &m_gap_conn_params;
+    cp_init.p_conn_params = &conn_params;
     cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
     cp_init.next_conn_params_update_delay = NEXT_CONN_PARAMS_UPDATE_DELAY;
     cp_init.max_conn_params_update_count = MAX_CONN_PARAMS_UPDATE_COUNT;
@@ -243,8 +237,6 @@ static void on_ble_peripheral_evt(ble_evt_t const *p_ble_evt) {
 
     case BLE_GAP_EVT_PHY_UPDATE: {
         NRF_LOG_DEBUG("PHY update.");
-        m_phys.rx_phys = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;
-        m_phys.tx_phys = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
         ble_manager_evt_t evt;
         evt.evt_type = BLE_MANAGER_EVT_PHY_CHANGED;
         evt.evt_params.phy.rx_phys = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;
@@ -254,7 +246,6 @@ static void on_ble_peripheral_evt(ble_evt_t const *p_ble_evt) {
 
     case BLE_GAP_EVT_CONN_PARAM_UPDATE: {
         NRF_LOG_DEBUG("CONN PARAM update.");
-        m_gap_conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params;
         ble_manager_evt_t evt;
         evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
         evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params;
@@ -334,7 +325,6 @@ static void on_ble_central_evt(ble_evt_t const *p_ble_evt) {
         err_code = sd_ble_gap_conn_param_update(p_gap_evt->conn_handle, &p_gap_evt->params.conn_param_update_request.conn_params);
         APP_ERROR_CHECK(err_code);
 
-        m_gap_conn_params = p_gap_evt->params.conn_param_update_request.conn_params;
         ble_manager_evt_t evt;
         evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
         evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params;
@@ -351,8 +341,6 @@ static void on_ble_central_evt(ble_evt_t const *p_ble_evt) {
         err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
         APP_ERROR_CHECK(err_code);
 
-        m_phys.rx_phys = p_gap_evt->params.phy_update_request.peer_preferred_phys.rx_phys;
-        m_phys.tx_phys = p_gap_evt->params.phy_update_request.peer_preferred_phys.tx_phys;
         ble_manager_evt_t evt;
         evt.evt_type = BLE_MANAGER_EVT_PHY_CHANGED;
         evt.evt_params.phy.rx_phys = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;
@@ -482,11 +470,9 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt) {
     switch (ble_adv_evt) {
     case BLE_ADV_EVT_FAST:
         NRF_LOG_DEBUG("BLE_ADV_EVT_FAST.");
-        m_state = BLE_MANAGER_STATE_ADVERTISING;
         break;
     case BLE_ADV_EVT_IDLE:
         NRF_LOG_DEBUG("BLE_ADV_EVT_IDLE.");
-        m_state = BLE_ADV_EVT_IDLE;
     default:
         break;
     }
@@ -779,9 +765,13 @@ static uint32_t services_init(void) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_manager_init(ble_init_cfg_t init_cfg, ble_manager_evt_handler_t evt_handler) {
+uint32_t ble_manager_init(ble_init_cfg_t *init_cfg, ble_manager_evt_handler_t evt_handler) {
     uint32_t err_code;
     flash_manager_ble_cfg_t *flash;
+
+    if (init_cfg == NULL) {
+        return NRF_ERROR_NULL;
+    }
 
     // Check and Register event
     if (evt_handler == NULL) {
@@ -789,25 +779,19 @@ uint32_t ble_manager_init(ble_init_cfg_t init_cfg, ble_manager_evt_handler_t evt
     }
     m_evt_handler = evt_handler;
 
-    // Apply configuration
-    m_dcdc_mode = init_cfg.dcdc_mode;
-    m_txp = init_cfg.txp;
-    m_phys = init_cfg.phys;
-    memcpy(m_device_name, init_cfg.name, sizeof(m_device_name));
-    m_adv_interval = init_cfg.advparam;
-    m_gap_conn_params = init_cfg.gap_conn_params;
 
     // Inititiale BLE
     err_code = ble_stack_init();
     VERIFY_SUCCESS(err_code);
 
-    err_code = gap_params_init();
+    m_adv_interval = init_cfg->advparam; // Needed
+    err_code = gap_params_init(init_cfg->name, init_cfg->name_length, init_cfg->gap_conn_params);
     VERIFY_SUCCESS(err_code);
 
     err_code = gatt_init();
     VERIFY_SUCCESS(err_code);
 
-    err_code = conn_params_init();
+    err_code = conn_params_init(init_cfg->gap_conn_params);
     VERIFY_SUCCESS(err_code);
 
 #if defined(BLE_CAP_CENTRAL)
@@ -821,14 +805,18 @@ uint32_t ble_manager_init(ble_init_cfg_t init_cfg, ble_manager_evt_handler_t evt
     err_code = services_init();
     VERIFY_SUCCESS(err_code);
 
-    err_code = advertising_init(init_cfg.advparam);
+    err_code = advertising_init(init_cfg->advparam);
+    VERIFY_SUCCESS(err_code);
+
+    err_code = ble_dcdc_set(init_cfg->dcdc_mode);
+    VERIFY_SUCCESS(err_code);
+
+    err_code = ble_txp_set(init_cfg->txp);
     VERIFY_SUCCESS(err_code);
 
     // Register to serial packet forwarder
-    ser_pkt_fw_path_add(ser_pkt_fw_event_handler, SER_PKT_FW_PORT_BLE);
+    err_code = ser_pkt_fw_path_add(ser_pkt_fw_event_handler, SER_PKT_FW_PORT_BLE);
     VERIFY_SUCCESS(err_code);
-
-    m_state = BLE_MANAGER_STATE_IDLE;
 
     return err_code;
 }
@@ -973,8 +961,6 @@ uint32_t ble_name_set(uint8_t *name, uint16_t length) {
 
     // If device was advertising, resume
     if (current_mode != BLE_ADV_MODE_IDLE) {
-        // Device is advertising, restart it
-     //   advertising_init();
         ble_advertising_start(&m_advertising, current_mode);
     }
 
@@ -1079,7 +1065,7 @@ uint32_t ble_scan_list(device_info_t *list, uint8_t *nb_devices_found) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_connect(uint8_t *addr) {
+uint32_t ble_connect(uint8_t *addr, ble_gap_conn_params_t gap_conn_params) {
     uint32_t err_code;
     ble_gap_addr_t gap_addr;
     memcpy(gap_addr.addr, addr, BLE_GAP_ADDR_LEN);
@@ -1091,7 +1077,7 @@ uint32_t ble_connect(uint8_t *addr) {
     sd_ble_gap_connect_cancel();
 
     // Establish connection.
-    err_code = sd_ble_gap_connect(&gap_addr, &m_gap_scan_params, &m_gap_conn_params, APP_BLE_CONN_CFG_TAG);
+    err_code = sd_ble_gap_connect(&gap_addr, &m_gap_scan_params, &gap_conn_params, APP_BLE_CONN_CFG_TAG);
     VERIFY_SUCCESS(err_code);
 
     return NRF_SUCCESS;

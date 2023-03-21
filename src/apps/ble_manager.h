@@ -26,15 +26,6 @@
 
 #define SER_PKT_FW_PORT_BLE 1
 
-/**@brief BLE manager states.
- */
-typedef enum {
-    BLE_MANAGER_STATE_INIT = 0,
-    BLE_MANAGER_STATE_IDLE,
-    BLE_MANAGER_STATE_ADVERTISING,
-    BLE_MANAGER_STATE_CONNECTED,
-    BLE_MANAGER_STATE_MAX
-} ble_manager_state_t;
 
 /**@brief Structure containing scan result
  */
@@ -98,7 +89,7 @@ typedef void (*ble_manager_evt_handler_t)(ble_manager_evt_t evt);
 
 /**@brief Function for opening and initializing the BLE manager.
  */
-uint32_t ble_manager_init(ble_init_cfg_t init_cfg, ble_manager_evt_handler_t evt_handler);
+uint32_t ble_manager_init(ble_init_cfg_t *init_cfg, ble_manager_evt_handler_t evt_handler);
 
 /**@brief Function for getting the connection state.
  *
@@ -234,9 +225,10 @@ uint32_t ble_scan_list(device_info_t *list, uint8_t *nb_devices);
 /**@brief Function for connecting to a peripheral.
  *
  * @param[in] addr                  Address of the device to connect to
+ * @param[in] gap_conn_params       Connection parameters
  *
  * @retval NRF_SUCCESS              Operation success.
  */
-uint32_t ble_connect(uint8_t *addr);
+uint32_t ble_connect(uint8_t *addr, ble_gap_conn_params_t gap_conn_params);
 
 #endif

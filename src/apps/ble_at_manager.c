@@ -791,7 +791,7 @@ at_ret_code_t at_connect_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ble_connect(addr);
+    err_code = ble_connect(addr, m_gap_conn_params);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -960,7 +960,7 @@ ret_code_t ble_at_manager_init() {
     ble_init_cfg.advparam = m_adv_interval;
     ble_init_cfg.gap_conn_params = m_gap_conn_params;
 
-    err_code = ble_manager_init(ble_init_cfg, ble_manager_evt_handler);
+    err_code = ble_manager_init(&ble_init_cfg, ble_manager_evt_handler);
     VERIFY_SUCCESS(err_code);
 
     // Initialize serial packet fowarder
