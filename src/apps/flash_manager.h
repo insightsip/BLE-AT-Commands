@@ -31,7 +31,7 @@ typedef struct
     uint8_t dcdc_mode;
     int8_t txp;
     ble_gap_phys_t phys;
-    uint8_t name[26];
+    uint8_t name[31];
     uint16_t name_length;
     uint16_t advparam;
     ble_gap_conn_params_t gap_conn_params;

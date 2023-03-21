@@ -51,17 +51,11 @@
  */
 #define UNITS_TO_MSEC(UNITS, RESOLUTION) (((UNITS)*RESOLUTION) / (1000))
 
-#define DEVICE_NAME "ISP_BLE_UART"                           /**< Name of device. Will be included in the advertising data. */
-#define MIN_CONN_INTERVAL 20                                 /**< Minimum acceptable connection interval (20 ms). */
-#define MAX_CONN_INTERVAL 75                                 /**< Maximum acceptable connection interval (75 ms). */
-#define SLAVE_LATENCY 0                                      /**< Slave latency. */
-#define CONN_SUP_TIMEOUT 4000                                /**< Connection supervisory timeout (4 seconds). */
 #define FIRST_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(5000) /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(30000) /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
 #define MAX_CONN_PARAMS_UPDATE_COUNT 3                       /**< Number of attempts before giving up the connection parameter negotiation. */
 #define APP_BLE_CONN_CFG_TAG 1                               /**< A tag identifying the SoftDevice BLE configuration. */
 #define APP_BLE_OBSERVER_PRIO 3                              /**< Application's BLE observer priority. You shouldn't need to modify this value. */
-#define APP_ADV_INTERVAL 500                                 /**< The advertising interval (in ms). */
 #define APP_ADV_DURATION 0                                   /**< The advertising duration in units of 10 milliseconds. */
 #define APP_SCAN_SCAN_INTERVAL 160
 #define APP_SCAN_SCAN_WINDOW 80
@@ -97,8 +91,8 @@ static device_info_t found_devices[MAX_SCAN_DEVICE_LIST];
 static uint8_t m_dcdc_mode = 0;                              /**< Current DCDC mode. */
 static int8_t m_txp = 0;                                     /**< Current txp. */
 static ble_gap_phys_t m_phys = {0, 0};                       /**< Current phys. */
-static uint8_t m_device_name[26] = DEVICE_NAME;              /**< Current device name. */
-static uint16_t m_adv_interval = APP_ADV_INTERVAL;           /**< Current advertising interval (in ms). */
+static uint8_t m_device_name[31];                           /**< Current device name. */
+static uint16_t m_adv_interval;           /**< Current advertising interval (in ms). */
 static ble_gap_conn_params_t m_gap_conn_params;              /**< Current connection parameters */
 static ble_gap_scan_params_t m_gap_scan_params;              /**< Current scan parameters */
 static ble_manager_state_t m_state = BLE_MANAGER_STATE_INIT; /**< Current state */
@@ -500,7 +494,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt) {
 
 /**@brief Function for initializing the Advertising functionality.
  */
-static uint32_t advertising_init(void) {
+static uint32_t advertising_init(uint16_t adv_interval) {
     uint32_t err_code;
     ble_advertising_init_t init;
 
@@ -511,7 +505,7 @@ static uint32_t advertising_init(void) {
     init.srdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
     init.srdata.uuids_complete.p_uuids = m_adv_uuids;
     init.config.ble_adv_fast_enabled = true;
-    init.config.ble_adv_fast_interval = MSEC_TO_UNITS(m_adv_interval, UNIT_0_625_MS);
+    init.config.ble_adv_fast_interval = MSEC_TO_UNITS(adv_interval, UNIT_0_625_MS);
     init.config.ble_adv_fast_timeout = APP_ADV_DURATION;
     init.evt_handler = on_adv_evt;
 
@@ -519,15 +513,6 @@ static uint32_t advertising_init(void) {
     VERIFY_SUCCESS(err_code);
 
     ble_advertising_conn_cfg_tag_set(&m_advertising, APP_BLE_CONN_CFG_TAG);
-
-    return NRF_SUCCESS;
-}
-
-/**@brief Function for starting advertising.
- */
-static uint32_t advertising_start(void) {
-    uint32_t err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
-    VERIFY_SUCCESS(err_code);
 
     return NRF_SUCCESS;
 }
@@ -703,9 +688,6 @@ static void ble_nus_data_evt_handler(ble_nus_evt_t *p_evt) {
     if (p_evt->type == BLE_NUS_EVT_RX_DATA) {
         uint32_t err_code;
 
-        NRF_LOG_DEBUG("Received data from BLE NUS. Writing data on UART.");
-        NRF_LOG_HEXDUMP_DEBUG(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
-
         err_code = ser_pkt_fw_tx_send(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length, SER_PKT_FW_PORT_BLE);
 
         if (p_evt->params.rx_data.p_data[p_evt->params.rx_data.length - 1] == '\r') {
@@ -839,7 +821,7 @@ uint32_t ble_manager_init(ble_init_cfg_t init_cfg, ble_manager_evt_handler_t evt
     err_code = services_init();
     VERIFY_SUCCESS(err_code);
 
-    err_code = advertising_init();
+    err_code = advertising_init(init_cfg.advparam);
     VERIFY_SUCCESS(err_code);
 
     // Register to serial packet forwarder
@@ -905,33 +887,18 @@ uint32_t ble_phy_set(uint8_t phy_tx, uint8_t phy_rx) {
 
 uint32_t ble_advparam_set(uint16_t interval) {
     uint32_t err_code;
-    ble_advertising_init_t init;
     ble_adv_mode_t current_mode = m_advertising.adv_mode_current;
 
+    // If device is advertising, Stop it before reconfiguration
     if (current_mode != BLE_ADV_MODE_IDLE) {
-        // Device is advertising, Stop it before reconfiguration
         sd_ble_gap_adv_stop(m_advertising.adv_handle);
     }
 
-    // Set new advertising interval
-    memset(&init, 0, sizeof(init));
-    init.advdata.name_type = BLE_ADVDATA_FULL_NAME;
-    init.advdata.include_appearance = false;
-    init.advdata.flags = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
-    init.srdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
-    init.srdata.uuids_complete.p_uuids = m_adv_uuids;
-    init.config.ble_adv_fast_enabled = true;
-    init.config.ble_adv_fast_interval = MSEC_TO_UNITS(interval, UNIT_0_625_MS);
-    init.config.ble_adv_fast_timeout = 0;
-    init.evt_handler = on_adv_evt;
+    advertising_init(interval);
+    m_adv_interval = interval;
 
-    err_code = ble_advertising_init(&m_advertising, &init);
-    VERIFY_SUCCESS(err_code);
-
-    ble_advertising_conn_cfg_tag_set(&m_advertising, APP_BLE_CONN_CFG_TAG);
-
+    // If device was advertising, resume
     if (current_mode != BLE_ADV_MODE_IDLE) {
-        // Device was advertising, resume
         err_code = ble_advertising_start(&m_advertising, current_mode);
         VERIFY_SUCCESS(err_code);
     }
@@ -988,17 +955,26 @@ uint32_t ble_addr_get(uint8_t *addr) {
 uint32_t ble_name_set(uint8_t *name, uint16_t length) {
     uint32_t err_code;
     ble_gap_conn_sec_mode_t sec_mode;
+    ble_advertising_init_t init;
     ble_adv_mode_t current_mode = m_advertising.adv_mode_current;
+
+    // If device is advertising, Stop it before reconfiguration
+    if (current_mode != BLE_ADV_MODE_IDLE) {
+        sd_ble_gap_adv_stop(m_advertising.adv_handle);
+    }
 
     // Change name
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
     err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)name, length);
     VERIFY_SUCCESS(err_code);
 
+    // Re encode ad/sr packet
+    advertising_init(m_adv_interval);
+
+    // If device was advertising, resume
     if (current_mode != BLE_ADV_MODE_IDLE) {
         // Device is advertising, restart it
-        sd_ble_gap_adv_stop(m_advertising.adv_handle);
-        advertising_init();
+     //   advertising_init();
         ble_advertising_start(&m_advertising, current_mode);
     }
 
