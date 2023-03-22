@@ -85,7 +85,7 @@ static uint8_t m_tx_buffer[128] = {0};
 static uint8_t m_echo = ECHO_OFF;
 static uint8_t m_current_role = BLE_PERIPHERAL; /**< Current Role. */
 static uint8_t m_dcdc_mode = DCDC_OFF;          /**< Current DCDC mode. */
-static int8_t m_txp = 0;                        /**< Current txp. */
+static int8_t m_txp = BLE_TXP_0DBM;             /**< Current txp. */
 static ble_gap_phys_t m_phys = {0, 0};          /**< Current phys. */
 static uint8_t m_device_name[31];               /**< Current device name. */
 static uint16_t m_device_name_len;              /**< Current device name length. */

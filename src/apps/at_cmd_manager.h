@@ -72,12 +72,9 @@ typedef enum {
 #define AT_BLE_SCANLIST "+BLESCANLIST"
 #define AT_BLE_CONNECT "+BLECONNECT"
 
-#define BLE_PERIPHERAL 0
-#define BLE_CENTRAL 1
+
 #define ECHO_ON 1
 #define ECHO_OFF 0
-#define DCDC_ON 1
-#define DCDC_OFF 0
 
 uint32_t at_cmd_manager_init();
 void at_cmd_manager_execute();

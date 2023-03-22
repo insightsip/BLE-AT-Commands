@@ -19,10 +19,10 @@
  *****************************************************************************/
 
 #include "fds.h"
-#include "nrf_pwr_mgmt.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
+#include "nrf_pwr_mgmt.h"
 
 #include "flash_manager.h"
 
@@ -31,9 +31,9 @@
 #define FLASH_MANAGER_BLE_REC_KEY (0x7010)
 #define FLASH_MANAGER_SER_REC_KEY (0x7011)
 
-#define DEFAULT_ROLE 0
-#define DEFAULT_DCDC_MODE 0
-#define DEFAULT_TXP 0
+#define DEFAULT_ROLE BLE_PERIPHERAL
+#define DEFAULT_DCDC_MODE DCDC_OFF
+#define DEFAULT_TXP BLE_TXP_0DBM
 #define DEFAULT_PHYS_TX 0
 #define DEFAULT_PHYS_RX 0
 #define MIN_CONN_INTERVAL 20
@@ -86,8 +86,8 @@ static struct
     bool pending;     //!< Waiting for an fds FDS_EVT_DEL_RECORD event, to delete the next record.
 } m_delete_all;
 
-static bool m_fds_initialized;                   /**< Flag to check fds initialization. */
-static bool m_fds_updated;                       /**< Flag to check fds updating. */
+static bool              m_fds_initialized;      /**< Flag to check fds initialization. */
+static bool              m_fds_updated;          /**< Flag to check fds updating. */
 static fds_record_desc_t m_ble_cfg_records_desc; /**< BLE configuration Record descriptor */
 static fds_record_desc_t m_ser_cfg_records_desc; /**< BLE configuration Record descriptor */
 
@@ -181,7 +181,7 @@ static void fds_evt_handler(fds_evt_t const *p_evt) {
 }
 
 uint32_t flash_manager_init(void) {
-    uint32_t err_code;
+    uint32_t         err_code;
     fds_find_token_t tok = {0};
 
     err_code = fds_register(fds_evt_handler);
@@ -225,9 +225,9 @@ uint32_t flash_manager_init(void) {
 }
 
 uint32_t flash_manager_ble_cfg_load(flash_manager_ble_cfg_t **p_data) {
-    uint32_t err_code;
+    uint32_t           err_code;
     fds_flash_record_t flash_record;
-    fds_find_token_t ftok;
+    fds_find_token_t   ftok;
 
     err_code = fds_record_open(&m_ble_cfg_records_desc, &flash_record);
     VERIFY_SUCCESS(err_code);
@@ -281,9 +281,9 @@ uint32_t flash_manager_ble_cfg_restore(void) {
 }
 
 uint32_t flash_manager_ser_cfg_load(flash_manager_ser_cfg_t **p_data) {
-    uint32_t err_code;
+    uint32_t           err_code;
     fds_flash_record_t flash_record;
-    fds_find_token_t ftok;
+    fds_find_token_t   ftok;
 
     err_code = fds_record_open(&m_ser_cfg_records_desc, &flash_record);
     VERIFY_SUCCESS(err_code);

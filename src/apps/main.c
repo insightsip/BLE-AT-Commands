@@ -124,7 +124,7 @@ int main(void) {
     APP_ERROR_CHECK(err_code);
 
     // Start execution.
-    NRF_LOG_INFO("Debug logging for UART over RTT started.");
+    NRF_LOG_INFO("BLE-AT-Commands started.");
 
     // Enter main loop.
     for (;;) {

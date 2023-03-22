@@ -21,11 +21,34 @@
 #ifndef BLE_MANAGER_H__
 #define BLE_MANAGER_H__
 
-#include "nrf_ble_scan.h"
+#include "ble_conn_params.h"
 #include <stdint.h>
 
 #define SER_PKT_FW_PORT_BLE 1
 
+#define MAX_SCAN_DEVICE_LIST 10
+#define BLE_PERIPHERAL 0
+#define BLE_CENTRAL 1
+#define BLE_ADV_START 1
+#define BLE_ADV_STOP 0
+#define BLE_SCAN_START 1
+#define BLE_SCAN_STOP 0
+#define BLE_TXP_M40DBM -40
+#define BLE_TXP_M20DBM -20
+#define BLE_TXP_M16DBM -16
+#define BLE_TXP_M12DBM -12
+#define BLE_TXP_M8DBM -8
+#define BLE_TXP_M4DBM -4
+#define BLE_TXP_0DBM 0
+#define BLE_TXP_2DBM 2
+#define BLE_TXP_3DBM 3
+#define BLE_TXP_4DBM 4
+#define BLE_TXP_5DBM 5
+#define BLE_TXP_6DBM 6
+#define BLE_TXP_7DBM 7
+#define BLE_TXP_8DBM 8
+#define DCDC_ON 1
+#define DCDC_OFF 0
 
 /**@brief Structure containing scan result
  */
@@ -37,11 +60,6 @@ typedef struct
     int8_t rssi;
 } device_info_t;
 
-#define MAX_SCAN_DEVICE_LIST 10
-#define BLE_ADV_START 1
-#define BLE_ADV_STOP 0
-#define BLE_SCAN_START 1
-#define BLE_SCAN_STOP 0
 
 /**@brief Structure defining the init BLE configuration data.
  */
