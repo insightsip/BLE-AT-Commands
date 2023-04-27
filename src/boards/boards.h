@@ -21,13 +21,10 @@
 #ifndef BOARDS_H
 #define BOARDS_H
 
-
 #if defined(BOARD_ISP1507_AX)
-    #include "ISP1507_AX.h"
-#elif defined(BOARD_ISP1507_AL)
-    #include "ISP1507_AL.h"
+    #include "ISP1507-AX.h"
 #elif defined(BOARD_ISP1807_LR)
-    #include "ISP1807_LR.h"
+    #include "ISP1807-LR.h"
 #elif defined(BOARD_ISP1907_LL)
     #include "ISP1907-LL.h"
 #else

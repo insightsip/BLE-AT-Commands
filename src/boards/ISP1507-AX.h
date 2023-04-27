@@ -1,7 +1,7 @@
  /******************************************************************************
- * @file    ISP1507_AX.h
+ * @file    ISP1507-AX.h
  * @author  Insight SiP
- * @brief   ISP1507_AX board specific file.
+ * @brief   ISP1507-AX board specific file.
  *
  * @attention
  *  THIS SOFTWARE IS PROVIDED BY INSIGHT SIP "AS IS" AND ANY EXPRESS

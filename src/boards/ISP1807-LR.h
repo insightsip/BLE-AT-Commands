@@ -1,7 +1,7 @@
  /******************************************************************************
- * @file    ISP1807_LR.h
+ * @file    ISP1807-LR.h
  * @author  Insight SiP
- * @brief   ISP1807_LR board specific file.
+ * @brief   ISP1807-LR board specific file.
  *
  * @attention
  *  THIS SOFTWARE IS PROVIDED BY INSIGHT SIP "AS IS" AND ANY EXPRESS
