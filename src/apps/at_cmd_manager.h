@@ -65,7 +65,8 @@ typedef enum {
 /* Peripheral */
 #define AT_BLE_ADVPARAM "+BLEADVPARAM"
 #define AT_BLE_NAME "+BLENAME"
-#define AT_BLE_ADVERTISE "+BLEADVERTISE"
+#define AT_BLE_ADVSTART "+BLEADVSTART"
+#define AT_BLE_ADVSTOP "+BLEADVSTOP"
 /* Central */
 #define AT_BLE_SCANSTART "+BLESCANSTART"
 #define AT_BLE_SCANSTOP "+BLESCANSTOP"

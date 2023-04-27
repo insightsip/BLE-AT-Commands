@@ -669,43 +669,36 @@ at_ret_code_t at_advparam_test(const uint8_t *param) {
     return AT_OK;
 }
 
-at_ret_code_t at_advertise_set(const uint8_t *param) {
+at_ret_code_t at_adv_start_set(const uint8_t *param) {
     uint32_t err_code;
     at_ret_code_t at_err_code;
-    int start = 0;
 
     // Check that role is Peripheral
     if (m_current_role != BLE_PERIPHERAL) {
         return AT_ERROR_FORBIDDEN;
     }
 
-    // Check parameters
-    if (sscanf(param, "%u", &start) != 1) {
-        return AT_ERROR_INVALID_PARAM;
-    }
-
-    start = (uint8_t)start;
-
-    if (start > 1) {
-        return AT_ERROR_INVALID_PARAM;
-    }
-
     // Run command
-    err_code = ble_advertise(start);
+    err_code = ble_advertise(1);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
     return AT_OK;
 }
 
-at_ret_code_t at_advertise_test(const uint8_t *param) {
+at_ret_code_t at_adv_stop_set(const uint8_t *param) {
+    uint32_t err_code;
+    at_ret_code_t at_err_code;
+
     // Check that role is Peripheral
     if (m_current_role != BLE_PERIPHERAL) {
         return AT_ERROR_FORBIDDEN;
     }
 
-    sprintf(m_tx_buffer, "%s: (0,1)\r\n", AT_BLE_ADVERTISE);
-    ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
+    // Run command
+    err_code = ble_advertise(0);
+    CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
+    AT_VERIFY_SUCCESS(at_err_code);
 
     return AT_OK;
 }
@@ -819,7 +812,8 @@ static at_command_t at_commands[] =
         AT_COMMAND_DEF(AT_BLE_RSSI, at_error_not_supported, at_rssi_read, at_error_supported),
         AT_COMMAND_DEF(AT_BLE_ROLE, at_role_set, at_role_read, at_role_test),
         AT_COMMAND_DEF(AT_BLE_DISCONNECT, at_disconnect_set, at_error_not_supported, at_error_supported),
-        AT_COMMAND_DEF(AT_BLE_ADVERTISE, at_advertise_set, at_error_not_supported, at_advertise_test),
+        AT_COMMAND_DEF(AT_BLE_ADVSTART, at_adv_start_set, at_error_not_supported, at_error_supported),
+        AT_COMMAND_DEF(AT_BLE_ADVSTOP, at_adv_stop_set, at_error_not_supported, at_error_supported),
         AT_COMMAND_DEF(AT_BLE_NAME, at_name_set, at_name_read, at_error_supported),
         AT_COMMAND_DEF(AT_BLE_ADVPARAM, at_advparam_set, at_advparam_read, at_advparam_test),
 #if defined(BLE_CAP_CENTRAL)
