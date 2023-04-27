@@ -18,21 +18,16 @@
  *
  *****************************************************************************/
 
-#include "app_timer.h"
-#include "app_util_platform.h"
-#include "at_cmd_manager.h"
-#include "ble_hci.h"
-#include "nordic_common.h"
+
 #include "nrf.h"
 #include "nrf_drv_wdt.h"
+#include "nrf_pwr_mgmt.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
-#include "nrf_pwr_mgmt.h"
-#include "nrf_sdh.h"
-#include "nrf_sdh_soc.h"
-#include <stdint.h>
-#include <string.h>
+#include "app_timer.h"
+#include "at_cmd_manager.h"
+
 
 #define DEAD_BEEF 0xDEADBEEF /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
