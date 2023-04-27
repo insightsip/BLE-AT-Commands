@@ -582,7 +582,7 @@ static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
             // update device name
             if (length != 0) {
                 memcpy(found_devices[index].name, &p_adv_report->data.p_data[offset], length);
-                found_devices[index].name_length = strlen(found_devices[index].name) - 1; // remove \r
+                found_devices[index].name_length = strlen(found_devices[index].name); 
             }
         }
     } break;
