@@ -22,16 +22,18 @@ The following modules are supported:
 
 | Module  | Softdevice | RX pin | TX pin | CTS pin | RTS pin | SEL pin |
 | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: |
-| ISP1907-LL | S112 | P0_08 | P0_17 | P0_03 | P0_05 | P0_11 |
-| ISP1507-AX | S132 | P0_08 | P0_06 | P0_07 | P0_05 | P0_04 |
-| ISP1807-LR | S140 | P0_08 | P0_06 | P0_07 | P0_05 | P0_04 |
+| ISP1907-LL | S112 | P0.08 | P0.17 | P0.03 | P0.05 | P0.11 |
+| ISP1507-AX | S132 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
+| ISP1807-LR | S140 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
 
 ## Changelog
 
 ### 2023-04-27, v1.x.x
 
 Removed support for ISP1507-AL.
+
 Added support for ISP1907-LL.
+
 Added support for central role.
 
 ### 2020-08-04, v1.1.0
