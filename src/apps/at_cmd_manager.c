@@ -403,11 +403,14 @@ at_ret_code_t at_connparam_set(const uint8_t *param) {
 }
 
 at_ret_code_t at_connparam_read(const uint8_t *param) {
+    float min_conn_interval_ms = m_gap_conn_params.min_conn_interval * 1.25;
+    float max_conn_interval_ms = m_gap_conn_params.max_conn_interval * 1.25;
+
     sprintf(m_tx_buffer, "%s: %.2f,%.2f,%u,%u\r\n", AT_BLE_CONNPARAM,
-        m_gap_conn_params.min_conn_interval,
-        m_gap_conn_params.max_conn_interval,
+        min_conn_interval_ms,
+        max_conn_interval_ms,
         m_gap_conn_params.slave_latency,
-        m_gap_conn_params.conn_sup_timeout);
+        m_gap_conn_params.conn_sup_timeout*10);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;

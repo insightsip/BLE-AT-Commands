@@ -29,7 +29,7 @@
 #elif defined(BOARD_ISP1807_LR)
     #include "ISP1807_LR.h"
 #elif defined(BOARD_ISP1907_LL)
-    #include "ISP1907_LL.h"
+    #include "ISP1907-LL.h"
 #else
     #error "Board is not defined"
 #endif

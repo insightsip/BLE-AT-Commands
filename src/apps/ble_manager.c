@@ -66,13 +66,15 @@
 NRF_BLE_GATT_DEF(m_gatt);                             /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                               /**< Context for the Queued Write module.*/
 BLE_ADVERTISING_DEF(m_advertising);                   /**< Advertising module instance. */
+BLE_NUS_DEF(m_ble_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT); /**< BLE NUS service instance. */
+#if defined(BLE_CAP_CENTRAL)
 BLE_DB_DISCOVERY_DEF(m_db_disc);                      /**< Database discovery module instance. */
 BLE_NUS_C_DEF(m_ble_nus_c);                           /**< BLE Nordic UART Service (NUS) client instance. */
-BLE_NUS_DEF(m_ble_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT); /**< BLE NUS service instance. */
 NRF_BLE_SCAN_DEF(m_scan);                             /**< Scanning Module instance. */
 NRF_BLE_GQ_DEF(m_ble_gatt_queue,                      /**< BLE GATT Queue instance. */
     NRF_SDH_BLE_CENTRAL_LINK_COUNT,
     NRF_BLE_GQ_QUEUE_SIZE);
+#endif
 
 static ble_manager_evt_handler_t m_evt_handler;
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;               /**< Handle of the current connection. */
@@ -105,9 +107,12 @@ static void ser_pkt_fw_event_handler(ser_pkt_fw_evt_t event) {
         uint16_t role = ble_conn_state_role(m_conn_handle);
         if (role == BLE_GAP_ROLE_PERIPH) {
             ble_nus_data_send(&m_ble_nus, event.evt_params.rx_pkt_received.p_buffer, &event.evt_params.rx_pkt_received.num_of_bytes, m_conn_handle);
-        } else if (role == BLE_GAP_ROLE_CENTRAL) {
+        } 
+#if defined(BLE_CAP_CENTRAL)
+        else if (role == BLE_GAP_ROLE_CENTRAL) {
             ble_nus_c_string_send(&m_ble_nus_c, event.evt_params.rx_pkt_received.p_buffer, event.evt_params.rx_pkt_received.num_of_bytes);
         }
+#endif
         break;
     }
 
@@ -282,6 +287,7 @@ static void on_ble_peripheral_evt(ble_evt_t const *p_ble_evt) {
     }
 }
 
+#if defined(BLE_CAP_CENTRAL)
 /**@brief Function for handling BLE Stack events that are related to central application.
  *
  * @details This function keeps the connection handles of central application up-to-date. It
@@ -353,6 +359,7 @@ static void on_ble_central_evt(ble_evt_t const *p_ble_evt) {
         break;
     }
 }
+#endif
 
 /**@brief Function for handling BLE Stack events that are common to both the central and peripheral roles.
  * @param[in] conn_handle Connection Handle.
@@ -404,9 +411,12 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
     // Based on the role this device plays in the connection, dispatch to the right handler.
     if (role == BLE_GAP_ROLE_PERIPH || ble_evt_is_advertising_timeout(p_ble_evt)) {
         on_ble_peripheral_evt(p_ble_evt);
-    } else if ((role == BLE_GAP_ROLE_CENTRAL) || (p_ble_evt->header.evt_id == BLE_GAP_EVT_ADV_REPORT)) {
+    } 
+#if defined(BLE_CAP_CENTRAL)
+    else if ((role == BLE_GAP_ROLE_CENTRAL) || (p_ble_evt->header.evt_id == BLE_GAP_EVT_ADV_REPORT)) {
         on_ble_central_evt(p_ble_evt);
     }
+#endif
 }
 
 /**@brief Function for the SoftDevice initialization.
@@ -502,7 +512,7 @@ static uint32_t advertising_init(uint16_t adv_interval) {
 
     return NRF_SUCCESS;
 }
-
+#if defined(BLE_CAP_CENTRAL)
 /**@brief Function for handling database discovery events.
  *
  * @param[in] p_event  Pointer to the database discovery event.
@@ -651,6 +661,7 @@ static uint32_t scan_init(void) {
 
     return NRF_SUCCESS;
 }
+#endif
 
 /**@brief Function for handling Queued Write Module errors.
  *
@@ -1043,13 +1054,13 @@ uint32_t ble_restore(void) {
 }
 
 uint32_t ble_scan(uint8_t start) {
-
+#if defined(BLE_CAP_CENTRAL)
     if (start == BLE_SCAN_START) {
         scan_start();
     } else {
         scan_stop();
     }
-
+#endif
     return NRF_SUCCESS;
 }
 
