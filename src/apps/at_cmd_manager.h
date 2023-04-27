@@ -49,7 +49,6 @@ typedef enum {
 #define AT_RESET "Z"
 #define AT_ECHO "E"
 #define AT_INFO "I"
-#define AT_VERSION "+VERSION"
 #define AT_DEEPSLEEP "+DEEPSLEEP"
 #define AT_UART "+UART"
 #define AT_DCDC "+DCDC"

@@ -291,13 +291,6 @@ at_ret_code_t at_dcdc_test(const uint8_t *param) {
     return AT_OK;
 }
 
-at_ret_code_t at_version_read(const uint8_t *param) {
-    sprintf(m_tx_buffer, "%s: %s\r\n", AT_VERSION, FW_REVISION);
-    ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
-
-    return AT_OK;
-}
-
 at_ret_code_t at_txp_set(const uint8_t *param) {
     uint32_t err_code;
     at_ret_code_t at_err_code;
@@ -801,7 +794,6 @@ static at_command_t at_commands[] =
         AT_COMMAND_DEF(AT_INFO, at_error_not_supported, at_info_read, at_error_supported),
         AT_COMMAND_DEF(AT_DEEPSLEEP, at_deepsleep_set, at_error_not_supported, at_error_supported),
         AT_COMMAND_DEF(AT_DCDC, at_dcdc_set, at_dcdc_read, at_dcdc_test),
-        AT_COMMAND_DEF(AT_VERSION, at_error_not_supported, at_version_read, at_error_supported),
         AT_COMMAND_DEF(AT_UART, at_uart_set, at_uart_read, at_uart_test),
         AT_COMMAND_DEF(AT_FACTORYRESET, at_factory_reset, at_error_not_supported, at_error_supported),
         AT_COMMAND_DEF(AT_BLE_CONNSTATE, at_error_not_supported, at_connstate_read, at_error_supported),
