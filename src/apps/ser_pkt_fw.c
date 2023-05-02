@@ -75,7 +75,7 @@ uint8_t m_ser_pkt_fw_port = 0;
 uint32_t m_select_pin = 0xFF;
 
 /** @brief Table containing serial configuration for each port */
-ser_pkt_fw_config_t m_ser_config[SER_PKT_FW_MAX_PORTS];
+ser_pkt_fw_config_t m_ser_config;
 
 
 
@@ -173,7 +173,7 @@ static void nrf_drv_gpiote_evt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_pola
 
     // Reconfigure serial PHY
     ser_phy_close();
-    ser_phy_open(m_ser_config[m_ser_pkt_fw_port].flow_control, m_ser_config[m_ser_pkt_fw_port].baudrate, ser_phy_events_handler);
+    ser_phy_open(m_ser_config.flow_control, m_ser_config.baudrate, ser_phy_events_handler);
 
     NRF_LOG_INFO("Serial packet forwarder port: %d", m_ser_pkt_fw_port);
 
@@ -204,15 +204,12 @@ uint32_t ser_pkt_fw_init(uint32_t select_pin)
     VERIFY_SUCCESS(err_code);
 
     /* Apply configuration from flash */
-    m_ser_config[SER_PKT_FW_PORT_1].flow_control = flash->flow_control;
-    m_ser_config[SER_PKT_FW_PORT_1].baudrate = flash->baudrate;
-
+    m_ser_config.flow_control = flash->flow_control;
+    m_ser_config.baudrate = flash->baudrate;
     m_select_pin = select_pin;
-    m_ser_config[SER_PKT_FW_DEFAULT_PORT].flow_control = 0;
-    m_ser_config[SER_PKT_FW_DEFAULT_PORT].baudrate = 38400;
 
     /* Initialize the serial PHY module. */
-    err_code = ser_phy_open(m_ser_config[SER_PKT_FW_DEFAULT_PORT].flow_control, m_ser_config[SER_PKT_FW_DEFAULT_PORT].baudrate, ser_phy_events_handler);
+    err_code = ser_phy_open(m_ser_config.flow_control, m_ser_config.baudrate, ser_phy_events_handler);
     if (NRF_SUCCESS != err_code)
     {
         m_rx_state = SER_PKT_FW_RX_STATE_CLOSED;
@@ -260,63 +257,35 @@ uint32_t ser_pkt_fw_init(uint32_t select_pin)
     return err_code;
 }
 
-uint32_t ser_pkt_fw_path_configure(uint8_t port, uint8_t flow_control, uint32_t baudrate)
+uint32_t ser_pkt_fw_configure(uint8_t flow_control, uint32_t baudrate)
 {
     uint32_t err_code = NRF_SUCCESS;
 
-    if ((SER_PKT_FW_RX_STATE_CLOSED == m_rx_state) || (SER_PKT_FW_TX_STATE_CLOSED == m_tx_state))
-    {
-       return NRF_ERROR_INVALID_STATE;
+    if ((SER_PKT_FW_RX_STATE_CLOSED == m_rx_state) || (SER_PKT_FW_TX_STATE_CLOSED == m_tx_state)) {
+        return NRF_ERROR_INVALID_STATE;
     }
 
-    if (port == SER_PKT_FW_DEFAULT_PORT)
-    {
-        m_ser_config[port].baudrate = baudrate;
-        m_ser_config[port].flow_control = flow_control;
+    /* Update flash if config changed */
+    if (m_ser_config.baudrate != baudrate || m_ser_config.flow_control != flow_control) {
+        m_ser_config.baudrate = baudrate;
+        m_ser_config.flow_control = flow_control;
 
-        /* Unitilizalize the serial PHY module */
-        ser_phy_close();
-
-        /* Initialize the serial PHY module. */
-        err_code = ser_phy_open(m_ser_config[port].flow_control, m_ser_config[port].baudrate, ser_phy_events_handler);
-        if (NRF_SUCCESS != err_code)
-        {
-            m_rx_state = SER_PKT_FW_RX_STATE_CLOSED;
-            m_tx_state = SER_PKT_FW_TX_STATE_CLOSED; 
-
-            if (NRF_ERROR_INVALID_PARAM != err_code)
-            {
-                err_code = NRF_ERROR_INTERNAL;
-            }
-
-            return err_code;
-        }
-    }
-    else if (port == SER_PKT_FW_PORT_1)
-    {
-        /* Update flash if config changed */
-        if (m_ser_config[port].baudrate != baudrate || m_ser_config[port].flow_control != flow_control)
-        {
-            m_ser_config[port].baudrate = baudrate;
-            m_ser_config[port].flow_control = flow_control;
-
-            flash_manager_ser_cfg_t flash;
-            flash.flow_control = m_ser_config[port].flow_control;
-            flash.baudrate = m_ser_config[port].baudrate;
-            flash_manager_ser_cfg_store(&flash);
-        }
+        flash_manager_ser_cfg_t flash;
+        flash.flow_control = m_ser_config.flow_control;
+        flash.baudrate = m_ser_config.baudrate;
+        flash_manager_ser_cfg_store(&flash);
     }
 
     return err_code;
 }
 
-uint32_t ser_pkt_fw_path_check(uint8_t port, uint8_t *flow_control, uint32_t *baudrate)
+uint32_t ser_pkt_fw_conf_check(uint8_t *flow_control, uint32_t *baudrate)
 {
     VERIFY_PARAM_NOT_NULL(flow_control);
     VERIFY_PARAM_NOT_NULL(baudrate);
 
-    *baudrate = m_ser_config[port].baudrate;
-    *flow_control = m_ser_config[port].flow_control;
+    *baudrate = m_ser_config.baudrate;
+    *flow_control = m_ser_config.flow_control;
 
     return NRF_SUCCESS;
 }

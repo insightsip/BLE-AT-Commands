@@ -102,11 +102,14 @@ static void idle_state_handle(void) {
 int main(void) {
     uint32_t err_code;
 
-    // Initialize.
+    // Initialize Logger.
     log_init();
+
+    // Initialize clock & power.
     timers_init();
     power_management_init();
 
+    // Initialize Watchdog.
     err_code = nrf_drv_wdt_init(NULL, wdt_event_handler);
     APP_ERROR_CHECK(err_code);
     err_code = nrf_drv_wdt_channel_alloc(&m_channel_id);

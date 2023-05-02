@@ -18,19 +18,21 @@
  *
  *****************************************************************************/
 
-#include "at_cmd_manager.h"
+#include <stdbool.h>
+#include <string.h>
 #include "app_error.h"
-#include "ble_manager.h"
-#include "boards.h"
-#include "flash_manager.h"
+#include "nrf_pwr_mgmt.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
-#include "nrf_pwr_mgmt.h"
+
+#include "at_cmd_manager.h"
+#include "ble_manager.h"
+#include "boards.h"
+#include "flash_manager.h"
 #include "ser_pkt_fw.h"
 #include "version.h"
-#include <stdbool.h>
-#include <string.h>
+
 
 /**
  * @brief Macro for creating a new AT Command
@@ -458,7 +460,7 @@ at_ret_code_t at_uart_set(const uint8_t *param) {
     }
 
     // Run command
-    err_code = ser_pkt_fw_path_configure(SER_PKT_FW_PORT_BLE, flowcontrol, baudrate);
+    err_code = ser_pkt_fw_configure(flowcontrol, baudrate);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -472,7 +474,7 @@ at_ret_code_t at_uart_read(const uint8_t *param) {
     uint32_t baudrate;
 
     // Read value
-    err_code = ser_pkt_fw_path_check(SER_PKT_FW_PORT_BLE, &flowcontrol, &baudrate);
+    err_code = ser_pkt_fw_conf_check(&flowcontrol, &baudrate);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -954,7 +956,7 @@ ret_code_t at_cmd_manager_init() {
 
     // Initialize serial packet fowarder
     err_code = ser_pkt_fw_init(PIN_SER_PKT_FW_SELECT);
-    VERIFY_SUCCESS(err_code);
+    APP_ERROR_CHECK(err_code);
 
     err_code = ser_pkt_fw_path_add(ser_pkt_fw_event_handler, SER_PKT_FW_PORT_AT);
     VERIFY_SUCCESS(err_code);

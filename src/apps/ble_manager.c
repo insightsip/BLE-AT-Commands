@@ -1060,13 +1060,15 @@ uint32_t ble_scan(uint8_t start) {
     } else {
         scan_stop();
     }
-#endif
+
     return NRF_SUCCESS;
+#else
+    return NRF_ERROR_FORBIDDEN;
+#endif
 }
 
 uint32_t ble_scan_list(device_info_t *list, uint8_t *nb_devices_found) {
-    uint32_t err_code;
-
+#if defined(BLE_CAP_CENTRAL)
     *nb_devices_found = devices_list_index;
 
     for (int i = 0; i < devices_list_index; i++) {
@@ -1074,9 +1076,13 @@ uint32_t ble_scan_list(device_info_t *list, uint8_t *nb_devices_found) {
     }
 
     return NRF_SUCCESS;
+#else
+    return NRF_ERROR_FORBIDDEN;
+#endif
 }
 
 uint32_t ble_connect(uint8_t *addr, ble_gap_conn_params_t gap_conn_params) {
+#if defined(BLE_CAP_CENTRAL)
     uint32_t err_code;
     ble_gap_addr_t gap_addr;
     memcpy(gap_addr.addr, addr, BLE_GAP_ADDR_LEN);
@@ -1092,4 +1098,7 @@ uint32_t ble_connect(uint8_t *addr, ble_gap_conn_params_t gap_conn_params) {
     VERIFY_SUCCESS(err_code);
 
     return NRF_SUCCESS;
+#else
+    return NRF_ERROR_FORBIDDEN;
+#endif
 }
