@@ -89,7 +89,7 @@ static struct
 static bool              m_fds_initialized;      /**< Flag to check fds initialization. */
 static bool              m_fds_updated;          /**< Flag to check fds updating. */
 static fds_record_desc_t m_ble_cfg_records_desc; /**< BLE configuration Record descriptor */
-static fds_record_desc_t m_ser_cfg_records_desc; /**< BLE configuration Record descriptor */
+static fds_record_desc_t m_ser_cfg_records_desc; /**< Serial configuration Record descriptor */
 
 /**@brief BLE configuration data. */
 static flash_manager_ble_cfg_t m_ble_cfg =
@@ -210,6 +210,7 @@ uint32_t flash_manager_init(void) {
     }
 
     /* Find record containing SER configuration */
+    memset(&tok, 0, sizeof(tok));
     err_code = fds_record_find(FLASH_MANAGER_FILE_ID, FLASH_MANAGER_SER_REC_KEY, &m_ser_cfg_records_desc, &tok);
     if (err_code == FDS_ERR_NOT_FOUND) {
         // Record not foud, create it and fill with default values

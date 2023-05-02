@@ -121,9 +121,10 @@ static const uint8_t *at_error_description[] =
 /**@brief Function for updating new configuration in the flash.
  *
  */
-static void update_flash(void) {
+static void update_ble_flash(void) {
     flash_manager_ble_cfg_t flash;
 
+    flash.role = m_current_role;
     flash.dcdc_mode = m_dcdc_mode;
     flash.advparam = m_adv_interval;
     flash.gap_conn_params = m_gap_conn_params;
@@ -144,7 +145,7 @@ static void ble_manager_evt_handler(ble_manager_evt_t evt) {
         if ((m_phys.tx_phys != evt.evt_params.phy.tx_phys) || (m_phys.rx_phys != evt.evt_params.phy.rx_phys)) {
             m_phys.tx_phys = evt.evt_params.phy.rx_phys;
             m_phys.rx_phys = evt.evt_params.phy.rx_phys;
-            update_flash();
+            update_ble_flash();
         }
         break;
 
@@ -158,8 +159,7 @@ static void ble_manager_evt_handler(ble_manager_evt_t evt) {
             m_gap_conn_params.max_conn_interval = evt.evt_params.conn_params.max_conn_interval;
             m_gap_conn_params.min_conn_interval = evt.evt_params.conn_params.min_conn_interval;
             m_gap_conn_params.slave_latency = evt.evt_params.conn_params.slave_latency;
-
-            update_flash();
+            update_ble_flash();
         }
         break;
     }
@@ -273,7 +273,7 @@ at_ret_code_t at_dcdc_set(const uint8_t *param) {
     // Update flash if dcdc_mode changed
     if (m_dcdc_mode != dcdc_mode) {
         m_dcdc_mode = dcdc_mode;
-        update_flash();
+        update_ble_flash();
     }
 
     return AT_OK;
@@ -311,7 +311,7 @@ at_ret_code_t at_txp_set(const uint8_t *param) {
     // Update flash if value changed
     if (m_txp != txp) {
         m_txp = txp;
-        update_flash();
+        update_ble_flash();
     }
 
     return AT_OK;
@@ -548,10 +548,14 @@ at_ret_code_t at_role_set(const uint8_t *param) {
         ble_scan(BLE_SCAN_STOP);
     }
 
-    m_current_role = new_role;
+    // Update flash if value changed
+    if (m_current_role != new_role) {
+         m_current_role = new_role;
+
+        update_ble_flash();
+    }
 
     // TODO do we start adv or scan here ?
-    // TODO store role in flash
 
     return AT_OK;
 }
@@ -598,7 +602,7 @@ at_ret_code_t at_name_set(const uint8_t *param) {
         strncpy(m_device_name, name, strlen(name) - 1);
         m_device_name_len = strlen(name) - 1;
 
-        update_flash();
+        update_ble_flash();
     }
 
     return AT_OK;
@@ -642,7 +646,7 @@ at_ret_code_t at_advparam_set(const uint8_t *param) {
     if (m_adv_interval != interval) {
         m_adv_interval = interval;
 
-        update_flash();
+        update_ble_flash();
     }
 
     return AT_OK;
