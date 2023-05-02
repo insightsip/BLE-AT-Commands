@@ -18,13 +18,13 @@
  *
  *****************************************************************************/
 
-#include <stdbool.h>
-#include <string.h>
 #include "app_error.h"
-#include "nrf_pwr_mgmt.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
+#include "nrf_pwr_mgmt.h"
+#include <stdbool.h>
+#include <string.h>
 
 #include "at_cmd_manager.h"
 #include "ble_manager.h"
@@ -32,7 +32,6 @@
 #include "flash_manager.h"
 #include "ser_pkt_fw.h"
 #include "version.h"
-
 
 /**
  * @brief Macro for creating a new AT Command
@@ -140,14 +139,22 @@ static void update_ble_flash(void) {
  */
 static void ble_manager_evt_handler(ble_manager_evt_t evt) {
     switch (evt.evt_type) {
-    case BLE_MANAGER_EVT_PHY_CHANGED:
+    case BLE_MANAGER_EVT_PHY_CHANGED: {
         // Update flash if value changed
-        if ((m_phys.tx_phys != evt.evt_params.phy.tx_phys) || (m_phys.rx_phys != evt.evt_params.phy.rx_phys)) {
-            m_phys.tx_phys = evt.evt_params.phy.rx_phys;
+        bool changed = false;
+        if (m_phys.tx_phys != evt.evt_params.phy.tx_phys) {
+            m_phys.tx_phys = evt.evt_params.phy.tx_phys;
+            changed = true;
+            }
+         if (m_phys.rx_phys != evt.evt_params.phy.rx_phys) {
             m_phys.rx_phys = evt.evt_params.phy.rx_phys;
+            changed = true;
+            }
+
+         if (changed) {
             update_ble_flash();
-        }
-        break;
+            }
+    } break;
 
     case BLE_MANAGER_EVT_CONN_PARAMS_CHANGED:
         // Update flash if value changed
@@ -412,7 +419,7 @@ at_ret_code_t at_connparam_read(const uint8_t *param) {
         min_conn_interval_ms,
         max_conn_interval_ms,
         m_gap_conn_params.slave_latency,
-        m_gap_conn_params.conn_sup_timeout*10);
+        m_gap_conn_params.conn_sup_timeout * 10);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
     return AT_OK;
@@ -550,7 +557,7 @@ at_ret_code_t at_role_set(const uint8_t *param) {
 
     // Update flash if value changed
     if (m_current_role != new_role) {
-         m_current_role = new_role;
+        m_current_role = new_role;
 
         update_ble_flash();
     }

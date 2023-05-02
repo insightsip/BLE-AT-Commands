@@ -68,10 +68,10 @@ NRF_BLE_QWR_DEF(m_qwr);                               /**< Context for the Queue
 BLE_ADVERTISING_DEF(m_advertising);                   /**< Advertising module instance. */
 BLE_NUS_DEF(m_ble_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT); /**< BLE NUS service instance. */
 #if defined(BLE_CAP_CENTRAL)
-BLE_DB_DISCOVERY_DEF(m_db_disc);                      /**< Database discovery module instance. */
-BLE_NUS_C_DEF(m_ble_nus_c);                           /**< BLE Nordic UART Service (NUS) client instance. */
-NRF_BLE_SCAN_DEF(m_scan);                             /**< Scanning Module instance. */
-NRF_BLE_GQ_DEF(m_ble_gatt_queue,                      /**< BLE GATT Queue instance. */
+BLE_DB_DISCOVERY_DEF(m_db_disc); /**< Database discovery module instance. */
+BLE_NUS_C_DEF(m_ble_nus_c);      /**< BLE Nordic UART Service (NUS) client instance. */
+NRF_BLE_SCAN_DEF(m_scan);        /**< Scanning Module instance. */
+NRF_BLE_GQ_DEF(m_ble_gatt_queue, /**< BLE GATT Queue instance. */
     NRF_SDH_BLE_CENTRAL_LINK_COUNT,
     NRF_BLE_GQ_QUEUE_SIZE);
 #endif
@@ -89,9 +89,9 @@ static ble_uuid_t const m_nus_uuid =
 static ble_uuid_t m_adv_uuids[] = {m_nus_uuid}; /**< Universally unique service identifier. */
 static uint8_t devices_list_index = 0;
 static device_info_t found_devices[MAX_SCAN_DEVICE_LIST];
-static uint16_t m_adv_interval;                              /**< Current advertising interval (in ms). */
+static uint16_t m_adv_interval; /**< Current advertising interval (in ms). */
 
-static ble_gap_scan_params_t m_gap_scan_params;              /**< Current scan parameters */
+static ble_gap_scan_params_t m_gap_scan_params; /**< Current scan parameters */
 
 /**@brief A function for processing the HAL Transport layer events.
  *
@@ -107,7 +107,7 @@ static void ser_pkt_fw_event_handler(ser_pkt_fw_evt_t event) {
         uint16_t role = ble_conn_state_role(m_conn_handle);
         if (role == BLE_GAP_ROLE_PERIPH) {
             ble_nus_data_send(&m_ble_nus, event.evt_params.rx_pkt_received.p_buffer, &event.evt_params.rx_pkt_received.num_of_bytes, m_conn_handle);
-        } 
+        }
 #if defined(BLE_CAP_CENTRAL)
         else if (role == BLE_GAP_ROLE_CENTRAL) {
             ble_nus_c_string_send(&m_ble_nus_c, event.evt_params.rx_pkt_received.p_buffer, event.evt_params.rx_pkt_received.num_of_bytes);
@@ -240,15 +240,6 @@ static void on_ble_peripheral_evt(ble_evt_t const *p_ble_evt) {
         m_conn_handle = BLE_CONN_HANDLE_INVALID;
         break;
 
-    case BLE_GAP_EVT_PHY_UPDATE: {
-        NRF_LOG_DEBUG("PHY update.");
-        ble_manager_evt_t evt;
-        evt.evt_type = BLE_MANAGER_EVT_PHY_CHANGED;
-        evt.evt_params.phy.rx_phys = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;
-        evt.evt_params.phy.tx_phys = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
-        m_evt_handler(evt);
-    } break;
-
     case BLE_GAP_EVT_CONN_PARAM_UPDATE: {
         NRF_LOG_DEBUG("CONN PARAM update.");
         ble_manager_evt_t evt;
@@ -333,7 +324,7 @@ static void on_ble_central_evt(ble_evt_t const *p_ble_evt) {
 
         ble_manager_evt_t evt;
         evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
-        evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params;
+        evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params;
         m_evt_handler(evt);
     } break;
 
@@ -341,17 +332,11 @@ static void on_ble_central_evt(ble_evt_t const *p_ble_evt) {
         NRF_LOG_DEBUG("PHY update request.");
         ble_gap_phys_t const phys =
             {
-                .rx_phys = BLE_GAP_PHY_AUTO,
-                .tx_phys = BLE_GAP_PHY_AUTO,
+                .rx_phys = p_ble_evt->evt.gap_evt.params.phy_update_request.peer_preferred_phys.rx_phys,
+                .tx_phys = p_ble_evt->evt.gap_evt.params.phy_update_request.peer_preferred_phys.tx_phys,
             };
         err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
         APP_ERROR_CHECK(err_code);
-
-        ble_manager_evt_t evt;
-        evt.evt_type = BLE_MANAGER_EVT_PHY_CHANGED;
-        evt.evt_params.phy.rx_phys = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;
-        evt.evt_params.phy.tx_phys = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
-        m_evt_handler(evt);
     } break;
 
     default:
@@ -383,6 +368,17 @@ static void on_ble_evt(uint16_t conn_handle, ble_evt_t const *p_ble_evt) {
         APP_ERROR_CHECK(err_code);
         break;
 
+    case BLE_GAP_EVT_PHY_UPDATE: {
+        NRF_LOG_DEBUG("PHY update.");
+        if (p_ble_evt->evt.gap_evt.params.phy_update.status == BLE_HCI_STATUS_CODE_SUCCESS) {
+            ble_manager_evt_t evt;
+            evt.evt_type = BLE_MANAGER_EVT_PHY_CHANGED;
+            evt.evt_params.phy.rx_phys = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;
+            evt.evt_params.phy.tx_phys = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
+            m_evt_handler(evt);
+        }
+    } break;
+
     default:
         // No implementation needed.
         break;
@@ -411,7 +407,7 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
     // Based on the role this device plays in the connection, dispatch to the right handler.
     if (role == BLE_GAP_ROLE_PERIPH || ble_evt_is_advertising_timeout(p_ble_evt)) {
         on_ble_peripheral_evt(p_ble_evt);
-    } 
+    }
 #if defined(BLE_CAP_CENTRAL)
     else if ((role == BLE_GAP_ROLE_CENTRAL) || (p_ble_evt->header.evt_id == BLE_GAP_EVT_ADV_REPORT)) {
         on_ble_central_evt(p_ble_evt);
@@ -582,7 +578,7 @@ static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
             // update device name
             if (length != 0) {
                 memcpy(found_devices[index].name, &p_adv_report->data.p_data[offset], length);
-                found_devices[index].name_length = strlen(found_devices[index].name); 
+                found_devices[index].name_length = strlen(found_devices[index].name);
             }
         }
     } break;
@@ -789,7 +785,6 @@ uint32_t ble_manager_init(ble_init_cfg_t *init_cfg, ble_manager_evt_handler_t ev
         return NRF_ERROR_NULL;
     }
     m_evt_handler = evt_handler;
-
 
     // Inititiale BLE
     err_code = ble_stack_init();
