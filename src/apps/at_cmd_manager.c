@@ -934,6 +934,7 @@ ret_code_t at_cmd_manager_init() {
     VERIFY_SUCCESS(err_code);
 
     // Apply configuration of the flash
+    m_current_role = flash->role;
     m_dcdc_mode = flash->dcdc_mode;
     m_txp = flash->txp;
     m_phys = flash->phys;
