@@ -326,11 +326,6 @@ static void on_ble_evt(uint16_t conn_handle, ble_evt_t const *p_ble_evt) {
         NRF_LOG_DEBUG("Connection parameters update request.");
         err_code = sd_ble_gap_conn_param_update(p_ble_evt->evt.gap_evt.conn_handle, &p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params);
         APP_ERROR_CHECK(err_code);
-        /*
-                ble_manager_evt_t evt;
-                evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
-                evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params;
-                m_evt_handler(evt);*/
     } break;
 
     default:

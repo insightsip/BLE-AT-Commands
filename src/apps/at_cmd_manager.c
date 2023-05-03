@@ -683,11 +683,6 @@ at_ret_code_t at_advparam_read(const uint8_t *param) {
 }
 
 at_ret_code_t at_advparam_test(const uint8_t *param) {
-    // Check that role is Peripheral
-    if (m_current_role != BLE_PERIPHERAL) {
-        return AT_ERROR_FORBIDDEN;
-    }
-
     sprintf(m_tx_buffer, "%s: (20-10240)\r\n", AT_BLE_ADVPARAM);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
 
@@ -816,6 +811,11 @@ at_ret_code_t at_connect_set(const uint8_t *param) {
     return AT_OK;
 }
 
+at_ret_code_t at_connect_test(const uint8_t *param) {
+    sprintf(m_tx_buffer, "%s: hhhhhhhhhhhh\r\n", AT_BLE_CONNECT);
+    ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
+}
+
 /**
  * @brief  List of all supported AT Commands
  */
@@ -844,7 +844,7 @@ static at_command_t at_commands[] =
         AT_COMMAND_DEF(AT_BLE_SCANSTART, at_scan_start_set, at_error_not_supported, at_error_supported),
         AT_COMMAND_DEF(AT_BLE_SCANSTOP, at_scan_stop_set, at_error_not_supported, at_error_supported),
         AT_COMMAND_DEF(AT_BLE_SCANLIST, at_error_not_supported, at_scan_list_read, at_error_supported),
-        AT_COMMAND_DEF(AT_BLE_CONNECT, at_connect_set, at_error_not_supported, at_error_supported),
+        AT_COMMAND_DEF(AT_BLE_CONNECT, at_connect_set, at_error_not_supported, at_connect_test),
 #endif // defined(BLE_CAP_CENTRAL)
 };
 
