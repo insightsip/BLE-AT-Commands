@@ -23,7 +23,6 @@
 #include "app_util_platform.h"
 #include "ble_advdata.h"
 #include "ble_advertising.h"
-#include "ble_conn_params.h"
 #include "ble_db_discovery.h"
 #include "ble_nus.h"
 #include "ble_nus_c.h"
@@ -51,12 +50,9 @@
  */
 #define UNITS_TO_MSEC(UNITS, RESOLUTION) (((UNITS)*RESOLUTION) / (1000))
 
-#define FIRST_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(5000) /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
-#define NEXT_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(30000) /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
-#define MAX_CONN_PARAMS_UPDATE_COUNT 3                       /**< Number of attempts before giving up the connection parameter negotiation. */
-#define APP_BLE_CONN_CFG_TAG 1                               /**< A tag identifying the SoftDevice BLE configuration. */
-#define APP_BLE_OBSERVER_PRIO 3                              /**< Application's BLE observer priority. You shouldn't need to modify this value. */
-#define APP_ADV_DURATION 0                                   /**< The advertising duration in units of 10 milliseconds. */
+#define APP_BLE_CONN_CFG_TAG 1  /**< A tag identifying the SoftDevice BLE configuration. */
+#define APP_BLE_OBSERVER_PRIO 3 /**< Application's BLE observer priority. You shouldn't need to modify this value. */
+#define APP_ADV_DURATION 0      /**< The advertising duration in units of 10 milliseconds. */
 #define APP_SCAN_SCAN_INTERVAL 160
 #define APP_SCAN_SCAN_WINDOW 80
 #define APP_SCAN_SCAN_DURATION 0
@@ -168,57 +164,6 @@ static uint32_t gap_params_init(uint8_t *device_name, uint16_t device_name_lengt
     return NRF_SUCCESS;
 }
 
-/**@brief Function for handling errors from the Connection Parameters module.
- *
- * @param[in] nrf_error  Error code containing information about what went wrong.
- */
-/*static void conn_params_error_handler(uint32_t nrf_error) {
-    APP_ERROR_HANDLER(nrf_error);
-}*/
-
-/**@brief Function for handling an event from the Connection Parameters Module.
- *
- * @details This function will be called for all events in the Connection Parameters Module
- *          which are passed to the application.
- *
- * @note All this function does is to disconnect. This could have been done by simply setting
- *       the disconnect_on_fail config parameter, but instead we use the event handler
- *       mechanism to demonstrate its use.
- *
- * @param[in] p_evt  Event received from the Connection Parameters Module.
- */
-/*static void on_conn_params_evt(ble_conn_params_evt_t *p_evt) {
-    uint32_t err_code;
-
-    if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED) {
-        err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
-        APP_ERROR_CHECK(err_code);
-    }
-}*/
-
-/**@brief Function for initializing the Connection Parameters module.
- */
-/*
-static uint32_t conn_params_init(ble_gap_conn_params_t conn_params) {
-   uint32_t err_code;
-   ble_conn_params_init_t cp_init;
-
-   memset(&cp_init, 0, sizeof(cp_init));
-   cp_init.p_conn_params = &conn_params;
-   cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
-   cp_init.next_conn_params_update_delay = NEXT_CONN_PARAMS_UPDATE_DELAY;
-   cp_init.max_conn_params_update_count = MAX_CONN_PARAMS_UPDATE_COUNT;
-   cp_init.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
-   cp_init.disconnect_on_fail = false;
-   cp_init.evt_handler = on_conn_params_evt;
-   cp_init.error_handler = conn_params_error_handler;
-
-   err_code = ble_conn_params_init(&cp_init);
-   VERIFY_SUCCESS(err_code);
-
-   return NRF_SUCCESS;
-}*/
-
 /**@brief   Function for handling BLE events from peripheral applications.
  * @details Updates the status LEDs used to report the activity of the peripheral applications.
  *
@@ -318,8 +263,6 @@ static void on_ble_central_evt(ble_evt_t const *p_ble_evt) {
         }
     } break;
 
-   
-
     default:
         // No implementation needed.
         break;
@@ -379,15 +322,15 @@ static void on_ble_evt(uint16_t conn_handle, ble_evt_t const *p_ble_evt) {
         m_evt_handler(evt);
     } break;
 
-     case BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST: {
+    case BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST: {
         NRF_LOG_DEBUG("Connection parameters update request.");
         err_code = sd_ble_gap_conn_param_update(p_ble_evt->evt.gap_evt.conn_handle, &p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params);
         APP_ERROR_CHECK(err_code);
-/*
-        ble_manager_evt_t evt;
-        evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
-        evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params;
-        m_evt_handler(evt);*/
+        /*
+                ble_manager_evt_t evt;
+                evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
+                evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params;
+                m_evt_handler(evt);*/
     } break;
 
     default:
@@ -807,9 +750,6 @@ uint32_t ble_manager_init(ble_init_cfg_t *init_cfg, ble_manager_evt_handler_t ev
 
     err_code = gatt_init();
     VERIFY_SUCCESS(err_code);
-    /*
-        err_code = conn_params_init(init_cfg->gap_conn_params);
-        VERIFY_SUCCESS(err_code);*/
 
 #if defined(BLE_CAP_CENTRAL)
     err_code = db_discovery_init();
@@ -914,43 +854,12 @@ uint32_t ble_advparam_set(uint16_t interval) {
 uint32_t ble_connparam_set(ble_gap_conn_params_t gap_conn_params) {
     uint32_t err_code;
 
-    err_code = sd_ble_gap_conn_param_update(m_conn_handle, &gap_conn_params);
-    VERIFY_SUCCESS(err_code);
-    
-
-    /*
-    ble_conn_params_init_t cp_init;
-    uint16_t role = ble_conn_state_role(m_conn_handle);
-
-    if (role == BLE_GAP_ROLE_PERIPH) {
-        // Peripheral role
-        if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
-            // Device is already connected, request connection parameters update to the peer
-            err_code = ble_conn_params_change_conn_params(m_conn_handle, &gap_conn_params);
-            VERIFY_SUCCESS(err_code);
-        } else {
-            // device not connected, configure so that the device start connection update procedure as soon it gets connected
-            ble_conn_params_stop();
-
-            memset(&cp_init, 0, sizeof(cp_init));
-            cp_init.p_conn_params = &gap_conn_params;
-            cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
-            cp_init.next_conn_params_update_delay = NEXT_CONN_PARAMS_UPDATE_DELAY;
-            cp_init.max_conn_params_update_count = MAX_CONN_PARAMS_UPDATE_COUNT;
-            cp_init.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
-            cp_init.disconnect_on_fail = false;
-            cp_init.evt_handler = on_conn_params_evt;
-            cp_init.error_handler = conn_params_error_handler;
-            err_code = ble_conn_params_init(&cp_init);
-            VERIFY_SUCCESS(err_code);
-        }
-    } else if (role == BLE_GAP_ROLE_CENTRAL) {
-        // Central role
-        if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
-             err_code = sd_ble_gap_conn_param_update(m_conn_handle, &gap_conn_params);
-             VERIFY_SUCCESS(err_code);
-        }
-    }*/
+    if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
+        err_code = sd_ble_gap_conn_param_update(m_conn_handle, &gap_conn_params);
+        VERIFY_SUCCESS(err_code);
+    } else {
+        return NRF_ERROR_INVALID_STATE;
+    }
 
     return NRF_SUCCESS;
 }

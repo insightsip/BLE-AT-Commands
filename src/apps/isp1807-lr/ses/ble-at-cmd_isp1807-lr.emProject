@@ -71,7 +71,6 @@
     <folder Name="nRF_BLE">
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/ble/common/ble_advdata.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/ble/ble_advertising/ble_advertising.c" />
-      <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/ble/common/ble_conn_params.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/ble/common/ble_conn_state.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/ble/ble_db_discovery/ble_db_discovery.c" />
       <file file_name="../../../nRF5_SDK_16.0.0_98a08e2/components/ble/ble_link_ctx_manager/ble_link_ctx_manager.c" />
