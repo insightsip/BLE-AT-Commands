@@ -172,9 +172,9 @@ static uint32_t gap_params_init(uint8_t *device_name, uint16_t device_name_lengt
  *
  * @param[in] nrf_error  Error code containing information about what went wrong.
  */
-static void conn_params_error_handler(uint32_t nrf_error) {
+/*static void conn_params_error_handler(uint32_t nrf_error) {
     APP_ERROR_HANDLER(nrf_error);
-}
+}*/
 
 /**@brief Function for handling an event from the Connection Parameters Module.
  *
@@ -187,36 +187,37 @@ static void conn_params_error_handler(uint32_t nrf_error) {
  *
  * @param[in] p_evt  Event received from the Connection Parameters Module.
  */
-static void on_conn_params_evt(ble_conn_params_evt_t *p_evt) {
+/*static void on_conn_params_evt(ble_conn_params_evt_t *p_evt) {
     uint32_t err_code;
 
     if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED) {
         err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
         APP_ERROR_CHECK(err_code);
     }
-}
+}*/
 
 /**@brief Function for initializing the Connection Parameters module.
  */
+/*
 static uint32_t conn_params_init(ble_gap_conn_params_t conn_params) {
-    uint32_t err_code;
-    ble_conn_params_init_t cp_init;
+   uint32_t err_code;
+   ble_conn_params_init_t cp_init;
 
-    memset(&cp_init, 0, sizeof(cp_init));
-    cp_init.p_conn_params = &conn_params;
-    cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
-    cp_init.next_conn_params_update_delay = NEXT_CONN_PARAMS_UPDATE_DELAY;
-    cp_init.max_conn_params_update_count = MAX_CONN_PARAMS_UPDATE_COUNT;
-    cp_init.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
-    cp_init.disconnect_on_fail = false;
-    cp_init.evt_handler = on_conn_params_evt;
-    cp_init.error_handler = conn_params_error_handler;
+   memset(&cp_init, 0, sizeof(cp_init));
+   cp_init.p_conn_params = &conn_params;
+   cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
+   cp_init.next_conn_params_update_delay = NEXT_CONN_PARAMS_UPDATE_DELAY;
+   cp_init.max_conn_params_update_count = MAX_CONN_PARAMS_UPDATE_COUNT;
+   cp_init.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
+   cp_init.disconnect_on_fail = false;
+   cp_init.evt_handler = on_conn_params_evt;
+   cp_init.error_handler = conn_params_error_handler;
 
-    err_code = ble_conn_params_init(&cp_init);
-    VERIFY_SUCCESS(err_code);
+   err_code = ble_conn_params_init(&cp_init);
+   VERIFY_SUCCESS(err_code);
 
-    return NRF_SUCCESS;
-}
+   return NRF_SUCCESS;
+}*/
 
 /**@brief   Function for handling BLE events from peripheral applications.
  * @details Updates the status LEDs used to report the activity of the peripheral applications.
@@ -232,21 +233,21 @@ static void on_ble_peripheral_evt(ble_evt_t const *p_ble_evt) {
         m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
         err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
         APP_ERROR_CHECK(err_code);
+
+        // Start RSSI
         sd_ble_gap_rssi_start(m_conn_handle, 1, 5);
+
+        // update connection update
+        ble_manager_evt_t evt;
+        evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
+        evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.connected.conn_params;
+        m_evt_handler(evt);
         break;
 
     case BLE_GAP_EVT_DISCONNECTED:
         NRF_LOG_INFO("Disconnected");
         m_conn_handle = BLE_CONN_HANDLE_INVALID;
         break;
-
-    case BLE_GAP_EVT_CONN_PARAM_UPDATE: {
-        NRF_LOG_DEBUG("CONN PARAM update.");
-        ble_manager_evt_t evt;
-        evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
-        evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params;
-        m_evt_handler(evt);
-    } break;
 
     case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
         // Pairing not supported
@@ -317,16 +318,7 @@ static void on_ble_central_evt(ble_evt_t const *p_ble_evt) {
         }
     } break;
 
-    case BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST: {
-        NRF_LOG_DEBUG("Connection parameters update request.");
-        err_code = sd_ble_gap_conn_param_update(p_gap_evt->conn_handle, &p_gap_evt->params.conn_param_update_request.conn_params);
-        APP_ERROR_CHECK(err_code);
-
-        ble_manager_evt_t evt;
-        evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
-        evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params;
-        m_evt_handler(evt);
-    } break;
+   
 
     default:
         // No implementation needed.
@@ -377,6 +369,25 @@ static void on_ble_evt(uint16_t conn_handle, ble_evt_t const *p_ble_evt) {
             };
         err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
         APP_ERROR_CHECK(err_code);
+    } break;
+
+    case BLE_GAP_EVT_CONN_PARAM_UPDATE: {
+        NRF_LOG_DEBUG("CONN PARAM update.");
+        ble_manager_evt_t evt;
+        evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
+        evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params;
+        m_evt_handler(evt);
+    } break;
+
+     case BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST: {
+        NRF_LOG_DEBUG("Connection parameters update request.");
+        err_code = sd_ble_gap_conn_param_update(p_ble_evt->evt.gap_evt.conn_handle, &p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params);
+        APP_ERROR_CHECK(err_code);
+/*
+        ble_manager_evt_t evt;
+        evt.evt_type = BLE_MANAGER_EVT_CONN_PARAMS_CHANGED;
+        evt.evt_params.conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params;
+        m_evt_handler(evt);*/
     } break;
 
     default:
@@ -796,9 +807,9 @@ uint32_t ble_manager_init(ble_init_cfg_t *init_cfg, ble_manager_evt_handler_t ev
 
     err_code = gatt_init();
     VERIFY_SUCCESS(err_code);
-
-    err_code = conn_params_init(init_cfg->gap_conn_params);
-    VERIFY_SUCCESS(err_code);
+    /*
+        err_code = conn_params_init(init_cfg->gap_conn_params);
+        VERIFY_SUCCESS(err_code);*/
 
 #if defined(BLE_CAP_CENTRAL)
     err_code = db_discovery_init();
@@ -900,36 +911,46 @@ uint32_t ble_advparam_set(uint16_t interval) {
     return NRF_SUCCESS;
 }
 
-uint32_t ble_connparam_set(float conn_interval_min, float conn_interval_max, uint16_t conn_latency, uint16_t conn_timeout) {
+uint32_t ble_connparam_set(ble_gap_conn_params_t gap_conn_params) {
     uint32_t err_code;
+
+    err_code = sd_ble_gap_conn_param_update(m_conn_handle, &gap_conn_params);
+    VERIFY_SUCCESS(err_code);
+    
+
+    /*
     ble_conn_params_init_t cp_init;
-    ble_gap_conn_params_t temp_gap_conn_params;
+    uint16_t role = ble_conn_state_role(m_conn_handle);
 
-    temp_gap_conn_params.min_conn_interval = MSEC_TO_UNITS(conn_interval_min, UNIT_1_25_MS);
-    temp_gap_conn_params.max_conn_interval = MSEC_TO_UNITS(conn_interval_max, UNIT_1_25_MS);
-    temp_gap_conn_params.slave_latency = conn_latency;
-    temp_gap_conn_params.conn_sup_timeout = MSEC_TO_UNITS(conn_timeout, UNIT_10_MS);
+    if (role == BLE_GAP_ROLE_PERIPH) {
+        // Peripheral role
+        if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
+            // Device is already connected, request connection parameters update to the peer
+            err_code = ble_conn_params_change_conn_params(m_conn_handle, &gap_conn_params);
+            VERIFY_SUCCESS(err_code);
+        } else {
+            // device not connected, configure so that the device start connection update procedure as soon it gets connected
+            ble_conn_params_stop();
 
-    if (m_conn_handle == BLE_CONN_HANDLE_INVALID) {
-        ble_conn_params_stop();
-
-        memset(&cp_init, 0, sizeof(cp_init));
-        cp_init.p_conn_params = &temp_gap_conn_params;
-        cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
-        cp_init.next_conn_params_update_delay = NEXT_CONN_PARAMS_UPDATE_DELAY;
-        cp_init.max_conn_params_update_count = MAX_CONN_PARAMS_UPDATE_COUNT;
-        cp_init.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
-        cp_init.disconnect_on_fail = false;
-        cp_init.evt_handler = on_conn_params_evt;
-        cp_init.error_handler = conn_params_error_handler;
-        err_code = ble_conn_params_init(&cp_init);
-        VERIFY_SUCCESS(err_code);
-    }
-    if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
-        // Device is already connected, request connection parameters update to the peer
-        err_code = ble_conn_params_change_conn_params(m_conn_handle, &temp_gap_conn_params);
-        VERIFY_SUCCESS(err_code);
-    }
+            memset(&cp_init, 0, sizeof(cp_init));
+            cp_init.p_conn_params = &gap_conn_params;
+            cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
+            cp_init.next_conn_params_update_delay = NEXT_CONN_PARAMS_UPDATE_DELAY;
+            cp_init.max_conn_params_update_count = MAX_CONN_PARAMS_UPDATE_COUNT;
+            cp_init.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
+            cp_init.disconnect_on_fail = false;
+            cp_init.evt_handler = on_conn_params_evt;
+            cp_init.error_handler = conn_params_error_handler;
+            err_code = ble_conn_params_init(&cp_init);
+            VERIFY_SUCCESS(err_code);
+        }
+    } else if (role == BLE_GAP_ROLE_CENTRAL) {
+        // Central role
+        if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
+             err_code = sd_ble_gap_conn_param_update(m_conn_handle, &gap_conn_params);
+             VERIFY_SUCCESS(err_code);
+        }
+    }*/
 
     return NRF_SUCCESS;
 }

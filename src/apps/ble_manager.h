@@ -156,15 +156,12 @@ uint32_t ble_advparam_set(uint16_t interval);
 
 /**@brief Function for setting the connection parameters.
  *
- * @param[in] conn_interval_min     Interval min in ms
- * @param[in] conn_interval_max     Interval max in ms
- * @param[in] conn_latency          Slave latency
- * @param[in] conn_timeout          timeout in ms
+ * @param[in] gap_conn_params     Connection parameters
  *
  * @retval NRF_SUCCESS              Operation success.
  * @retval NRF_ERROR_INVALID_PARAM  Operation failure. Wrong parameter.
  */
-uint32_t ble_connparam_set(float conn_interval_min, float conn_interval_max, uint16_t conn_latency, uint16_t conn_timeout);
+uint32_t ble_connparam_set(ble_gap_conn_params_t gap_conn_params);
 
 /**@brief Function for setting the device name.
  *

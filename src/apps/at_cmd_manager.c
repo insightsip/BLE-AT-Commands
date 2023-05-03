@@ -158,14 +158,24 @@ static void ble_manager_evt_handler(ble_manager_evt_t evt) {
 
     case BLE_MANAGER_EVT_CONN_PARAMS_CHANGED:
         // Update flash if value changed
-        if ((m_gap_conn_params.conn_sup_timeout != evt.evt_params.conn_params.conn_sup_timeout) ||
-            (m_gap_conn_params.max_conn_interval != evt.evt_params.conn_params.max_conn_interval) ||
-            (m_gap_conn_params.min_conn_interval != evt.evt_params.conn_params.min_conn_interval) ||
-            (m_gap_conn_params.slave_latency != evt.evt_params.conn_params.slave_latency)) {
+        bool changed = false;
+        if (m_gap_conn_params.conn_sup_timeout != evt.evt_params.conn_params.conn_sup_timeout) {
             m_gap_conn_params.conn_sup_timeout = evt.evt_params.conn_params.conn_sup_timeout;
+            changed = true;
+        }
+        if (m_gap_conn_params.max_conn_interval != evt.evt_params.conn_params.max_conn_interval) {
             m_gap_conn_params.max_conn_interval = evt.evt_params.conn_params.max_conn_interval;
-            m_gap_conn_params.min_conn_interval = evt.evt_params.conn_params.min_conn_interval;
+            changed = true;
+        }
+        if (m_gap_conn_params.min_conn_interval != evt.evt_params.conn_params.min_conn_interval) {
+             m_gap_conn_params.min_conn_interval = evt.evt_params.conn_params.min_conn_interval;
+             changed = true;
+        }
+        if (m_gap_conn_params.slave_latency != evt.evt_params.conn_params.slave_latency) {
             m_gap_conn_params.slave_latency = evt.evt_params.conn_params.slave_latency;
+            changed = true;
+        }
+        if (changed) {
             update_ble_flash();
         }
         break;
@@ -388,6 +398,7 @@ at_ret_code_t at_connparam_set(const uint8_t *param) {
     float interval_max;
     uint32_t latency;
     uint32_t timeout;
+    ble_gap_conn_params_t tmp_gap_conn_params;
 
     // Check parameters
     if (sscanf(param, "%f,%f,%u,%u", &interval_min, &interval_max, &latency, &timeout) != 4) {
@@ -401,8 +412,13 @@ at_ret_code_t at_connparam_set(const uint8_t *param) {
         return AT_ERROR_INVALID_PARAM;
     }
 
+    tmp_gap_conn_params.min_conn_interval = MSEC_TO_UNITS(interval_min, UNIT_1_25_MS);
+    tmp_gap_conn_params.max_conn_interval = MSEC_TO_UNITS(interval_max, UNIT_1_25_MS);
+    tmp_gap_conn_params.slave_latency = latency;
+    tmp_gap_conn_params.conn_sup_timeout = MSEC_TO_UNITS(timeout, UNIT_10_MS);
+
     // Run command
-    err_code = ble_connparam_set(interval_min, interval_max, latency, timeout);
+    err_code = ble_connparam_set(tmp_gap_conn_params);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
