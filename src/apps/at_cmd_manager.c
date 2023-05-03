@@ -786,7 +786,7 @@ at_ret_code_t at_scan_list_read(const uint8_t *param) {
         strncpy(name, scan_list[i].name, scan_list[i].name_length);
         memcpy(addr, scan_list[i].gap_addr.addr, BLE_GAP_ADDR_LEN);
 
-        sprintf(m_tx_buffer, "%s: %d, %s, 0x%x-0x%x-0x%x-0x%x-0x%x-0x%x\r\n", AT_BLE_SCANLIST, scan_list[i].rssi, name, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+        sprintf(m_tx_buffer, "%s: %d, %s, %02x%02x%02x%02x%02x%02x\r\n", AT_BLE_SCANLIST, scan_list[i].rssi, name, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
         ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
     }
 
@@ -804,7 +804,7 @@ at_ret_code_t at_connect_set(const uint8_t *param) {
     }
 
     // Check parameters
-    if (sscanf(param, "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx", &addr[0], &addr[1], &addr[2], &addr[3], &addr[4], &addr[5]) != 6) {
+    if (sscanf(param, "%02x%02x%02x%02x%02x%02x", &addr[0], &addr[1], &addr[2], &addr[3], &addr[4], &addr[5]) != 6) {
         return AT_ERROR_INVALID_PARAM;
     }
 
