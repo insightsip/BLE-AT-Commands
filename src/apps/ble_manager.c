@@ -328,17 +328,6 @@ static void on_ble_central_evt(ble_evt_t const *p_ble_evt) {
         m_evt_handler(evt);
     } break;
 
-    case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
-        NRF_LOG_DEBUG("PHY update request.");
-        ble_gap_phys_t const phys =
-            {
-                .rx_phys = p_ble_evt->evt.gap_evt.params.phy_update_request.peer_preferred_phys.rx_phys,
-                .tx_phys = p_ble_evt->evt.gap_evt.params.phy_update_request.peer_preferred_phys.tx_phys,
-            };
-        err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
-        APP_ERROR_CHECK(err_code);
-    } break;
-
     default:
         // No implementation needed.
         break;
@@ -377,6 +366,17 @@ static void on_ble_evt(uint16_t conn_handle, ble_evt_t const *p_ble_evt) {
             evt.evt_params.phy.tx_phys = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
             m_evt_handler(evt);
         }
+    } break;
+
+    case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
+        NRF_LOG_DEBUG("PHY update request.");
+        ble_gap_phys_t const phys =
+            {
+                .rx_phys = BLE_GAP_PHY_AUTO,
+                .tx_phys = BLE_GAP_PHY_AUTO,
+            };
+        err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
+        APP_ERROR_CHECK(err_code);
     } break;
 
     default:
