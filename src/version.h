@@ -19,6 +19,6 @@
 #ifndef __VERSION_H__
 #define __VERSION_H__
 
-#define FW_REVISION "1.1.2"
+#define FW_REVISION "1.2.0"
 
 #endif
