@@ -145,15 +145,15 @@ static void ble_manager_evt_handler(ble_manager_evt_t evt) {
         if (m_phys.tx_phys != evt.evt_params.phy.tx_phys) {
             m_phys.tx_phys = evt.evt_params.phy.tx_phys;
             changed = true;
-            }
-         if (m_phys.rx_phys != evt.evt_params.phy.rx_phys) {
+        }
+        if (m_phys.rx_phys != evt.evt_params.phy.rx_phys) {
             m_phys.rx_phys = evt.evt_params.phy.rx_phys;
             changed = true;
-            }
+        }
 
-         if (changed) {
+        if (changed) {
             update_ble_flash();
-            }
+        }
     } break;
 
     case BLE_MANAGER_EVT_CONN_PARAMS_CHANGED:
@@ -168,8 +168,8 @@ static void ble_manager_evt_handler(ble_manager_evt_t evt) {
             changed = true;
         }
         if (m_gap_conn_params.min_conn_interval != evt.evt_params.conn_params.min_conn_interval) {
-             m_gap_conn_params.min_conn_interval = evt.evt_params.conn_params.min_conn_interval;
-             changed = true;
+            m_gap_conn_params.min_conn_interval = evt.evt_params.conn_params.min_conn_interval;
+            changed = true;
         }
         if (m_gap_conn_params.slave_latency != evt.evt_params.conn_params.slave_latency) {
             m_gap_conn_params.slave_latency = evt.evt_params.conn_params.slave_latency;
@@ -457,7 +457,7 @@ at_ret_code_t at_addr_read(const uint8_t *param) {
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
-    sprintf(m_tx_buffer, "%s: %02X-%02X-%02X-%02X-%02X-%02X\r\n",
+    sprintf(m_tx_buffer, "%s: %02x%02x%02x%02x%02x%02x\r\n",
         AT_BLE_ADDR, devaddr[0], devaddr[1], devaddr[2], devaddr[3], devaddr[4], devaddr[5]);
 
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
@@ -556,6 +556,13 @@ at_ret_code_t at_role_set(const uint8_t *param) {
     if (new_role > 1) {
         return AT_ERROR_INVALID_PARAM;
     }
+
+    // Check that device is central compatible
+#if !defined(BLE_CAP_CENTRAL)
+    if (new_role == BLE_CENTRAL) {
+        return AT_ERROR_FORBIDDEN;
+    }
+#endif
 
     // disconnect if a connection is active in the wrong role
     ble_connection_state_get(&conn_state);
