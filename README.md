@@ -26,9 +26,14 @@ The following modules are supported:
 | ISP1507-AX | S132 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
 | ISP1807-LR | S140 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
 
+## Known issue
+
+AT+BLEPHY? and AT+BLECONNPARAM? return startup values cannot be trusted. This is due to the fact these parameters have to be negotiated each time a new BLE connection is established.
+When a connection is establish the host needs to manually call AT+BLEPHY and AT+BLECONNPARAM to set these parameters then it can check the result with AT+BLEPHY? and AT+BLECONNPARAM?
+
 ## Changelog
 
-### 2023-04-27, v1.x.x
+### 2023-05-09, v1.2.0
 
 Removed support for ISP1507-AL.
 
