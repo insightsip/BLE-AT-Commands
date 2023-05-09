@@ -7,7 +7,8 @@ The aim of this archive is to show an example of AT Command set for BLE.
 The project currently supports ISP1507-AX, ISP1907-LL and ISP1807-LR modules.
 Visit https://www.insightsip.com/products/short-range-modules to know more about these modules.
 
-An application note is available at https://www.insightsip.com/fichiers_insightsip/pdf/ble/ISP1507/isp_ble_AN200301.pdf
+An application note is available at:
+https://www.insightsip.com/fichiers_insightsip/pdf/ble/ISP1507/isp_ble_AN200301.pdf
 
 ## Environment
 
