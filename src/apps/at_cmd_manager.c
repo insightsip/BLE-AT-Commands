@@ -642,7 +642,7 @@ at_ret_code_t at_name_read(const uint8_t *param) {
     uint32_t err_code;
     at_ret_code_t at_err_code;
 
-    ble_name_get(m_device_name, &m_device_name_len);
+    err_code = ble_name_get(m_device_name, &m_device_name_len);
     CONVERT_NRF_TO_AT_ERROR(err_code, at_err_code);
     AT_VERIFY_SUCCESS(at_err_code);
 
@@ -857,7 +857,8 @@ static at_command_t at_commands[] =
 
 /**
  * @brief  Send final response
- * @param[in]
+ *
+ * @param[in] at_err_code AT command error code
  */
 static void final_response_send(at_ret_code_t at_err_code) {
     if (at_err_code > AT_ERROR_OTHER) {
