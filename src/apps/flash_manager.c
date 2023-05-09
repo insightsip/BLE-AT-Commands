@@ -24,6 +24,7 @@
 #include "nrf_log_default_backends.h"
 #include "nrf_pwr_mgmt.h"
 
+#include "boards.h"
 #include "flash_manager.h"
 
 /* File ID and Key used for the configuration records. */
@@ -40,7 +41,7 @@
 #define MAX_CONN_INTERVAL 75
 #define SLAVE_LATENCY 0
 #define CONN_SUP_TIMEOUT 4000
-#define DEFAULT_NAME "ISP_BLE_UART"
+#define DEFAULT_NAME MODULE_NAME
 #define DEFAULT_NAME_LEN 12
 #define DEFAULT_ADVINT 300
 
