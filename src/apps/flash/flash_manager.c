@@ -44,6 +44,8 @@
 #define DEFAULT_NAME MODULE_NAME
 #define DEFAULT_NAME_LEN 12
 #define DEFAULT_ADVINT 300
+#define DEFAULT_UART_BAUDRATE 38400
+#define DEFAULT_UART_FLOWCTRL 0
 
 /**@brief Array to map FDS events to strings. */
 static char const *fds_evt_str[] =
@@ -98,11 +100,11 @@ static flash_manager_ble_cfg_t m_ble_cfg =
         .role = DEFAULT_ROLE,
         .dcdc_mode = DEFAULT_DCDC_MODE,
         .txp = DEFAULT_TXP,
-        .phys.rx_phys = DEFAULT_PHYS_RX,
-        .phys.tx_phys = DEFAULT_PHYS_TX,
         .name = DEFAULT_NAME,
         .name_length = DEFAULT_NAME_LEN,
         .advparam = DEFAULT_ADVINT,
+        .phys.rx_phys = DEFAULT_PHYS_RX,
+        .phys.tx_phys = DEFAULT_PHYS_TX,
         .gap_conn_params.min_conn_interval = MSEC_TO_UNITS(MIN_CONN_INTERVAL, UNIT_1_25_MS),
         .gap_conn_params.max_conn_interval = MSEC_TO_UNITS(MAX_CONN_INTERVAL, UNIT_1_25_MS),
         .gap_conn_params.slave_latency = SLAVE_LATENCY,
@@ -112,8 +114,8 @@ static flash_manager_ble_cfg_t m_ble_cfg =
 /**@brief SER configuration data. */
 static flash_manager_ser_cfg_t m_ser_cfg =
     {
-        .flow_control = 0,
-        .baudrate = 38400};
+        .flow_control = DEFAULT_UART_FLOWCTRL,
+        .baudrate = DEFAULT_UART_BAUDRATE};
 
 /**@brief Record containing BLE configuration data. */
 static fds_record_t const m_ble_cfg_record =
@@ -320,8 +322,8 @@ uint32_t flash_manager_ser_cfg_restore(void) {
 
     m_fds_updated = false;
 
-    m_ser_cfg.baudrate = 38400;
-    m_ser_cfg.flow_control = 0;
+    m_ser_cfg.baudrate = DEFAULT_UART_BAUDRATE;
+    m_ser_cfg.flow_control = DEFAULT_UART_FLOWCTRL;
 
     err_code = fds_record_update(&m_ser_cfg_records_desc, &m_ser_cfg_record);
     VERIFY_SUCCESS(err_code);
