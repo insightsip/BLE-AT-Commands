@@ -112,7 +112,7 @@ static const uint8_t *at_error_description[] =
         "ERROR_DATA_SIZE\r\n",      /* AT_ERROR_DATA_SIZE */
         "ERROR_TIMEOUT\r\n",        /* AT_ERROR_TIMEOUT */
         "ERROR_NULL\r\n",           /* AT_ERROR_NULL */
-        "ERROR_FORBIDDEN \r\n",     /* AT_ERROR_FORBIDDEN */
+        "ERROR_FORBIDDEN\r\n",     /* AT_ERROR_FORBIDDEN */
         "ERROR_BUSY\r\n",           /* AT_ERROR_BUSY */
         "ERROR\r\n",                /* AT_MAX */
 };
