@@ -821,6 +821,8 @@ at_ret_code_t at_connect_set(const uint8_t *param) {
 at_ret_code_t at_connect_test(const uint8_t *param) {
     sprintf(m_tx_buffer, "%s: hhhhhhhhhhhh\r\n", AT_BLE_CONNECT);
     ser_pkt_fw_tx_send(m_tx_buffer, strlen(m_tx_buffer), SER_PKT_FW_PORT_AT);
+
+    return AT_OK;
 }
 
 /**
