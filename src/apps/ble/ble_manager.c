@@ -796,8 +796,15 @@ uint32_t ble_dcdc_set(uint8_t dcdc_mode) {
 uint32_t ble_txp_set(int8_t txp) {
     uint32_t err_code;
 
-    // Change TXP
+    // Change TXP for advertising module
     err_code = sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_ADV, m_advertising.adv_handle, txp);
+    VERIFY_SUCCESS(err_code);
+#if defined(BLE_CAP_CENTRAL)
+    // Change TXP for initiator/scanner
+    err_code = sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_SCAN_INIT,NULL, txp);
+    VERIFY_SUCCESS(err_code);
+#endif
+    // Change TXP of the current active connection
     if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
         err_code = sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN, m_conn_handle, txp);
     }
