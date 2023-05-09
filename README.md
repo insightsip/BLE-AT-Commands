@@ -7,7 +7,7 @@ The aim of this archive is to show an example of AT Command set for BLE.
 The project currently supports ISP1507-AX, ISP1907-LL and ISP1807-LR modules.
 Visit https://www.insightsip.com/products/short-range-modules to know more about these modules.
 
-An application note is available at:
+An application note is available at:\
 https://www.insightsip.com/fichiers_insightsip/pdf/ble/ISP1507/isp_ble_AN200301.pdf
 
 ## Environment
@@ -31,18 +31,18 @@ The following modules are supported:
 
 ## Known issue
 
-AT+BLEPHY? and AT+BLECONNPARAM? return startup values cannot be trusted. This is due to the fact these parameters have to be negotiated each time a new BLE connection is established.
+AT+BLEPHY? and AT+BLECONNPARAM? return startup values cannot be trusted.\
+This is due to the fact these parameters have to be negotiated each time a new BLE connection is established.
 When a connection is establish the host needs to manually call AT+BLEPHY and AT+BLECONNPARAM to set these parameters then it can check the result with AT+BLEPHY? and AT+BLECONNPARAM?
 
 ## Changelog
 
 ### 2023-05-09, v1.2.0
 
-Removed support for ISP1507-AL.
-
-Added support for ISP1907-LL.
-
-Added support for central role.
+Removed support for ISP1507-AL.\
+Added support for ISP1907-LL.\
+Added support for central role.\
+Reworked project tree.
 
 ### 2020-08-04, v1.1.0
 
