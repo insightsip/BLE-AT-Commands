@@ -4,7 +4,7 @@ Example of AT Command set for BLE
 ## Overview
 
 The aim of this archive is to show an example of AT Command set for BLE.
-The project currently supports ISP1507-AX, ISP1907-LL and ISP1807-LR modules.
+The project currently supports ISP1507-AX, ISP1907-LL, ISP1907-HT and ISP1807-LR modules.
 Visit https://www.insightsip.com/products/short-range-modules to know more about these modules.
 
 An application note is available at:\
@@ -28,6 +28,7 @@ The following modules are supported:
 | ISP1907-LL | S112 | P0.08 | P0.17 | P0.03 | P0.05 | P0.11 |
 | ISP1507-AX | S132 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
 | ISP1807-LR | S140 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
+| ISP1907-HT | S140 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
 
 ## Known issue
 
@@ -36,6 +37,10 @@ This is due to the fact these parameters have to be negotiated each time a new B
 When a connection is establish the host needs to manually call AT+BLEPHY and AT+BLECONNPARAM to set these parameters then it can check the result with AT+BLEPHY? and AT+BLECONNPARAM?
 
 ## Changelog
+
+### 2023-05-25, v1.2.1
+
+Added support for ISP1907-HT.
 
 ### 2023-05-09, v1.2.0
 
