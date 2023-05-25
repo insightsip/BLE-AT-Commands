@@ -1,7 +1,7 @@
  /******************************************************************************
- * @file    ISP1507_AL.h
+ * @file    ISP1807-LR.h
  * @author  Insight SiP
- * @brief   ISP1507_AL board specific file.
+ * @brief   ISP1807-LR board specific file.
  *
  * @attention
  *  THIS SOFTWARE IS PROVIDED BY INSIGHT SIP "AS IS" AND ANY EXPRESS
@@ -17,22 +17,25 @@
  *
  *****************************************************************************/
 
-#ifndef ISP1507_AL_H
-#define ISP1507_AL_H
+#ifndef ISP1807_LR_H
+#define ISP1807_LR_H
 
 // Boards specific pinout
-#define PIN_UART_RX             8       // Pin 32
-#define PIN_UART_TX             17      // Pin 34
-#define PIN_UART_CTS            3       // Pin 38
-#define PIN_UART_RTS            5       // Pin 36
-#define PIN_SER_PKT_FW_SELECT   11      // Pin 48
+#define PIN_UART_RX             8
+#define PIN_UART_TX             6
+
+#define PIN_UART_CTS            7
+#define PIN_UART_RTS            5
+#define PIN_SER_PKT_FW_SELECT   4
 
 // Capabilities & specificities
-#define BLE_MAX_TXP_8DBM        0
-#define BLE_CAP_PHY_CODED       0
+#define BLE_MAX_TXP_8DBM        1
+#define BLE_CAP_PHY_CODED       1
+#define BLE_CAP_CENTRAL
 
 // Others
-#define MODULE_NAME             "ISP1507-AL"
+#define MODULE_NAME             "ISP1807-LR"
 
 
-#endif // ISP1507_AL_H
+
+#endif // ISP1807_LR_H

@@ -4,14 +4,17 @@ Example of AT Command set for BLE
 ## Overview
 
 The aim of this archive is to show an example of AT Command set for BLE.
-The project currently supports ISP1507-AX, ISP1507-AL and ISP1807-LR modules.
+The project currently supports ISP1507-AX, ISP1907-LL, ISP1907-HT and ISP1807-LR modules.
 Visit https://www.insightsip.com/products/short-range-modules to know more about these modules.
+
+An application note is available at:\
+https://www.insightsip.com/fichiers_insightsip/pdf/ble/ISP1507/isp_ble_AN200301.pdf
 
 ## Environment
 
 The examples are ready to use with the Segger Embedded Studio (SES) IDE.
 
-SES provide a free license for nRF52832 development. Therefore it can be used freely for ISP4520 development.
+SES provide a free license for development on nRF devices.
 Licenses can be requested at https://license.segger.com/Nordic.cgi
 
 For more information regarding Segger Embedded Studio, please visit https://www.segger.com/products/development-tools/embedded-studio/
@@ -20,13 +23,31 @@ For more information regarding Segger Embedded Studio, please visit https://www.
 
 The following modules are supported:
 
-| Module  | Needed Softdevice | Logical ports |
-| :-----------: | :-----------: | :-----------: |
-| ISP1507-AL | S112 | RX: P0_08, TX: P0_17, CTS: P0_03, RTS: P0_05, SEL: P0_11 |
-| ISP1507-AX | S132 | RX: P0_08, TX: P0_06, CTS: P0_07, RTS: P0_05, SEL: P0_04 |
-| ISP1807-LR | S140 | RX: P0_08, TX: P0_06, CTS: P0_07, RTS: P0_05, SEL: P0_04 |
+| Module  | Softdevice | RX pin | TX pin | CTS pin | RTS pin | SEL pin |
+| :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: |
+| ISP1907-LL | S112 | P0.08 | P0.17 | P0.03 | P0.05 | P0.11 |
+| ISP1507-AX | S132 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
+| ISP1807-LR | S140 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
+| ISP1907-HT | S140 | P0.08 | P0.06 | P0.07 | P0.05 | P0.04 |
+
+## Known issue
+
+AT+BLEPHY? and AT+BLECONNPARAM? return startup values cannot be trusted.\
+This is due to the fact these parameters have to be negotiated each time a new BLE connection is established.
+When a connection is establish the host needs to manually call AT+BLEPHY and AT+BLECONNPARAM to set these parameters then it can check the result with AT+BLEPHY? and AT+BLECONNPARAM?
 
 ## Changelog
+
+### 2023-05-25, v1.2.1
+
+Added support for ISP1907-HT.
+
+### 2023-05-09, v1.2.0
+
+Removed support for ISP1507-AL.\
+Added support for ISP1907-LL.\
+Added support for central role.\
+Reworked project tree.
 
 ### 2020-08-04, v1.1.0
 

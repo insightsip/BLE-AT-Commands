@@ -21,16 +21,18 @@
 #ifndef FLASH_MANAGER_H_
 #define FLASH_MANAGER_H_
 
-#include "ble_conn_params.h"
+#include "ble_manager.h"
 
 /**@brief Structure defining the BLE configuration data.
  */
 typedef struct
 {
+    uint8_t role;
     uint8_t dcdc_mode;
     int8_t txp;
     ble_gap_phys_t phys;
-    uint8_t name[26];
+    uint8_t name[31];
+    uint16_t name_length;
     uint16_t advparam;
     ble_gap_conn_params_t gap_conn_params;
 }flash_manager_ble_cfg_t;
@@ -42,8 +44,6 @@ typedef struct
     uint8_t flow_control;
     uint32_t baudrate;
 }flash_manager_ser_cfg_t;
-
-
 
 /**@brief Function for initializing BLE manager flash handling.
  *

@@ -141,7 +141,6 @@ uint32_t ser_pkt_fw_path_remove(uint8_t port);
  *
  * @warning The function @ref ser_pkt_fw_init has ser_pkt_fw_configure can be called.
  *
- * @param[in] port                  select which port to configure
  * @param[in] flow_control          Flow control enable
  * @param[in] baudrate              serial baudrate
  *
@@ -153,13 +152,12 @@ uint32_t ser_pkt_fw_path_remove(uint8_t port);
  *                                  it again the function @ref at_hal_transport_close has to be called first.
  * @retval NRF_ERROR_INTERNAL       Operation failure. Internal error ocurred.
  */
-uint32_t ser_pkt_fw_path_configure(uint8_t port, uint8_t flow_control, uint32_t baudrate);
+uint32_t ser_pkt_fw_configure(uint8_t flow_control, uint32_t baudrate);
 
 /**@brief Function for configuring a path of Serial packet fowarder.
  *
  * @warning The function @ref ser_pkt_fw_init has ser_pkt_fw_configure can be called.
  *
- * @param[in] port                  Select which port to configure
  * @param[out] flow_control         Flow control enable
  * @param[out] baudrate             Serial baudrate
  *
@@ -168,7 +166,7 @@ uint32_t ser_pkt_fw_path_configure(uint8_t port, uint8_t flow_control, uint32_t 
  *
  * @retval NRF_ERROR_INTERNAL       Operation failure. Internal error ocurred.
  */
-uint32_t ser_pkt_fw_path_check(uint8_t port, uint8_t *flow_control, uint32_t *baudrate);
+uint32_t ser_pkt_fw_conf_check(uint8_t *flow_control, uint32_t *baudrate);
 
 /**@brief Function for transmitting a packet.
  *
