@@ -1,7 +1,7 @@
  /******************************************************************************
- * @file    noards.h
+ * @file    ISP1907-HT.h
  * @author  Insight SiP
- * @brief   Board management file.
+ * @brief   ISP1907-HT board specific file.
  *
  * @attention
  *  THIS SOFTWARE IS PROVIDED BY INSIGHT SIP "AS IS" AND ANY EXPRESS
@@ -16,21 +16,25 @@
  *  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
- 
- 
-#ifndef BOARDS_H
-#define BOARDS_H
 
-#if defined(BOARD_ISP1507_AX)
-    #include "ISP1507-AX.h"
-#elif defined(BOARD_ISP1807_LR)
-    #include "ISP1807-LR.h"
-#elif defined(BOARD_ISP1907_HT)
-    #include "ISP1907-HT.h"
-#elif defined(BOARD_ISP1907_LL)
-    #include "ISP1907-LL.h"
-#else
-    #error "Board is not defined"
-#endif
+#ifndef ISP1907_HT_H
+#define ISP1907_HT_H
 
-#endif
+// Boards specific pinout
+#define PIN_UART_RX             8
+#define PIN_UART_TX             6
+#define PIN_UART_CTS            7
+#define PIN_UART_RTS            5
+#define PIN_SER_PKT_FW_SELECT   4
+
+// Capabilities & specificities
+#define BLE_MAX_TXP_8DBM        1
+#define BLE_CAP_PHY_CODED       1
+#define BLE_CAP_CENTRAL
+
+// Others
+#define MODULE_NAME             "ISP1907-HT"
+
+
+
+#endif // ISP1807_LR_H
